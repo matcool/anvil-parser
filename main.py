@@ -55,8 +55,11 @@ class Block:
         self.id = id
         self.properties = properties or {}
 
+    def name(self):
+        return self.namespace + ':' + self.id
+
     def __repr__(self):
-        return f'<Block({self.name})>'
+        return f'<Block({self.name()})>'
 
     @classmethod
     def from_name(cls, name: str, *args, **kwargs):
@@ -102,22 +105,30 @@ class Chunk:
         if section == None: return
         return tuple(Block.from_palette(i) for i in section['Palette'])
 
-    def get_block(self, x: int, y: int, z: int) -> Block:
+    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None) -> Block:
         """
         Returns Block in the given coordinates, with them being relative to the chunk
-        Y value is global coords, and will be used to find the section
+        If section was not given, assumes Y is on global coords and gets section from it,
+        else uses the section and assumes Y is relative to the section
         """
         if x < 0 or x > 15 or z < 0 or z > 15:
             raise ValueError('X and Z must be in the range of 0 to 15')
-        section = self.get_section(y // 16)
-        # If its an empty section its most likely an air block 
+        if y < 0 or y > 255:
+            raise ValueError('Y must be in the range of 0 to 255')
+        
         if section == None:
-            return Block('minecraft:air')
+            section = self.get_section(y // 16)
+            # global Y to section Y
+            y %= 16
+
+        # If its an empty section its most likely an air block 
+        if section == None or section.get('BlockStates') == None:
+            return Block.from_name('minecraft:air')
 
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
-        bits = max((len(section['Palette'])-1).bit_length(),4)
-        
+        bits = max((len(section['Palette'])-1).bit_length(), 4)
+
         # Get index on the block list with the order YZX
         index = y * 16*16 + z * 16 + x
 
@@ -129,14 +140,12 @@ class Chunk:
             length = length or b.bit_length()
             return (a << length) | b
 
+        # BlockStates is an array of 64 bit numbers
+        # that holds the blocks index on the palette list
         states = section['BlockStates'].value
         
         # get location in the BlockStates array via the index
-        # BlockStates is an array of 64 bit numbers
         state = index * bits // 64
-
-        # get how many bits are from a palette index of the previous block
-        leftover = (bits - (state * 64 % bits)) % bits
 
         # makes sure the number is unsigned
         # by adding 2^64
@@ -146,13 +155,13 @@ class Chunk:
 
         # shift the number to the right to remove the left over bits
         # and shift so the i'th block is the first one
-        shifted_data = (data >> leftover) >> ((bits * index - leftover) % 64)
+        shifted_data = data >> ((bits * index) % 64)
 
         # if there arent enough bits it means the rest are in the next number
-        if shifted_data.bit_length() < bits:
+        if 64 - ((bits * index) % 64) < bits:
             data = states[state+1]
             if data < 0: data += 2**64
-            # get leftover from next state
+            # get how many bits are from a palette index of the next block
             leftover = (bits - ((state + 1) * 64 % bits)) % bits
 
             # Make sure the length is 64 so things like this cant happen
