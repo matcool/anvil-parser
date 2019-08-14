@@ -13,7 +13,7 @@ else:
 import os
 from PIL import Image
 sys.path.append('..')
-from main import *
+from anvil import *
 sys.path.pop(0)
 
 chunk = Chunk.from_region(region, chx, chz)
