@@ -1,5 +1,14 @@
 # anvil-parser
 Simple parser for the [Minecraft anvil file format](https://minecraft.gamepedia.com/Anvil_file_format)
+# Installation
+This project is available on [PyPI](https://pypi.org/project/anvil-parser/) and can be installed with pip
+```
+pip install anvil-parser
+```
+or directly from github
+```
+pip install git+https://github.com/matcool/anvil-parser.git
+```
 # Usage
 ```python
 import anvil
