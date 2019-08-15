@@ -1,79 +1,7 @@
-from typing import Tuple, Union, BinaryIO
-import zlib
+from typing import Union, Tuple
 from nbt import nbt
-from io import BytesIO
-import struct
-
-class Region:
-    def __init__(self, data: bytes):
-        """Makes a Region object from data, which is the region file content"""
-        self.data = data
-
-    @staticmethod
-    def header_offset(chunkX: int, chunkZ: int) -> int:
-        """Returns the byte offset for given chunk in the header"""
-        return 4 * (chunkX % 32 + chunkZ % 32 * 32)
-
-    def chunk_location(self, chunkX: int, chunkZ: int) -> Tuple[int, int]:
-        """
-        Returns the chunk offset in the 4KiB sectors from the start of the file,
-        and the length of the chunk in sectors of 4KiB
-
-        Returns (0, 0) if chunk hasnt been generated yet
-        """
-        b_off = self.header_offset(chunkX, chunkZ)
-        off = int.from_bytes(self.data[b_off : b_off + 3], byteorder='big')
-        sectors = self.data[b_off + 3]
-        return (off, sectors)
-
-    def chunk_data(self, chunkX: int, chunkZ: int) -> nbt.NBTFile:
-        """Returns the NBT chunk data"""
-        off = self.chunk_location(chunkX, chunkZ)
-        # (0, 0) means it hasnt generated yet, aka it doesnt exist yet
-        if off == (0, 0):
-            return
-        off = off[0] * 4096
-        length = int.from_bytes(self.data[off : off + 4], byteorder='big')
-        compression = self.data[off+4] # 2 most of the time
-        if compression == 1:
-            raise Exception('GZip is not supported')
-        compressed_data = self.data[off + 5 : off + 5 + length - 1]
-        return nbt.NBTFile(buffer=BytesIO(zlib.decompress(compressed_data)))
-
-    @classmethod
-    def from_file(cls, file: Union[str, BinaryIO]):
-        """Creates a new region with the data from reading the given file"""
-        if type(file == str):
-            with open(file, 'rb') as f:
-                return cls(data=f.read())
-        else:
-            return cls(data=file.read())
-
-class Block:
-    def __init__(self, namespace: str, id: str, properties: dict=None):
-        self.namespace = namespace
-        self.id = id
-        self.properties = properties or {}
-
-    def name(self):
-        return self.namespace + ':' + self.id
-
-    def __repr__(self):
-        return f'<Block({self.name()})>'
-
-    @classmethod
-    def from_name(cls, name: str, *args, **kwargs):
-        """Creates a new Block from the block's name (namespace:id)"""
-        namespace, id = name.split(':')
-        return cls(namespace, id, *args, **kwargs)
-
-    @classmethod
-    def from_palette(cls, tag: nbt.TAG_Compound):
-        """Creates a new Block from the tag format on Section.Palette"""
-        name = tag['Name'].value
-        properties = tag.get('Properties')
-        if properties: properties = dict(properties)
-        return cls.from_name(name, properties=properties)
+from .block import Block
+from .region import Region
 
 class Chunk:
     def __init__(self, nbt_data: nbt.NBTFile):
@@ -185,6 +113,6 @@ class Chunk:
         if type(region) == str:
             region = Region.from_file(region)
         nbt_data = region.chunk_data(chunkX, chunkZ)
-        if nbt_data == None:
+        if nbt_data is None:
             raise Exception('Unexistent chunk')
         return cls(nbt_data)

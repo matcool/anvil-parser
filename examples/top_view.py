@@ -13,10 +13,10 @@ else:
 import os
 from PIL import Image
 sys.path.append('..')
-from anvil import *
+import anvil
 sys.path.pop(0)
 
-chunk = Chunk.from_region(region, chx, chz)
+chunk = anvil.Chunk.from_region(region, chx, chz)
 img = Image.new('RGBA', (16*16,16*16))
 grid = [[None for i in range(16)] for j in range(16)]
 for y in reversed(range(256)):
