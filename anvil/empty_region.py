@@ -60,6 +60,25 @@ class EmptyRegion:
         """Helper function that only sets the block if self.inside(x, y, z) is True"""
         if self.inside(x, y, z): self.set_block(block, x, y, z)
 
+    def fill(self, block: Block, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, ignore_outside: bool=False):
+        """
+        Fills in blocks from (x1,y1,z1) to (x2,y2,z2)
+        """
+        if not ignore_outside:
+            if not self.inside(x1, y1, z1):
+                raise OutOfBoundsCoordinates('First coordinates do not belong in this region')
+            if not self.inside(x2, y2, z2):
+                raise OutOfBoundsCoordinates('Second coordinates do not belong in this region')
+        def from_inclusive(a, b):
+            """Returns a range from a to b, including both endpoints"""
+            c = int(b > a)*2-1
+            return range(a, b+c, c)
+        for y in from_inclusive(y1, y2):
+            for z in from_inclusive(z1, z2):
+                for x in from_inclusive(x1, x2):
+                    if ignore_outside: self.set_if_inside(block, x, y, z)
+                    else: self.set_block(block, x, y, z)
+
     def save(self, file: Union[str, BinaryIO]=None) -> bytes:
         """
         Returns the region as bytes with the anvil file format structure

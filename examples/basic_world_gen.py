@@ -53,10 +53,7 @@ for z in range(128):
                     region.set_block(grass_plant, x, v+1, z)
         # Tree
         if random.random() > 0.99:
-            for z_ in range(-2, 3):
-                for x_ in range(-2, 3):
-                    for y_ in range(2):
-                        region.set_if_inside(oak_leaves, x+x_, v+4+y_, z+z_)
+            region.fill(oak_leaves, x-2, v+4, z-2, x+2, v+5, z+2, ignore_outside=True)
             for y in range(6):
                 region.set_if_inside(oak_log_up, x, v+y+1, z)
             region.set_if_inside(oak_leaves, x, v+7, z)
