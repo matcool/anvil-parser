@@ -1,4 +1,5 @@
 from nbt import nbt
+from frozendict import frozendict
 
 class Block:
     def __init__(self, namespace: str, id: str, properties: dict=None):
@@ -11,6 +12,13 @@ class Block:
 
     def __repr__(self):
         return f'<Block({self.name()})>'
+
+    def __eq__(self, other):
+        if type(other) != Block: return False
+        return self.namespace == other.namespace and self.id == other.id and self.properties == other.properties
+
+    def __hash__(self):
+        return hash(self.name()) ^ hash(frozendict(self.properties))
 
     @classmethod
     def from_name(cls, name: str, *args, **kwargs):
