@@ -5,7 +5,7 @@ Needs a textures folder with a block folder inside
 import sys
 if len(sys.argv) == 1:
     print('You must give a region file')
-    sys.exit()
+    exit()
 else:
     region = sys.argv[1]
     chx = int(sys.argv[2])
