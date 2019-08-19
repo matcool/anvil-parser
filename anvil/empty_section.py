@@ -1,5 +1,6 @@
 from typing import List, Tuple
 from . import Block
+from .errors import OutOfBoundsCoordinates
 from nbt import nbt
 from struct import Struct
 
@@ -30,7 +31,7 @@ class EmptySection:
     def set_block(self, block: Block, x: int, y: int, z: int):
         """Sets the block at given coordinates"""
         if not self.inside(x, y, z):
-            raise ValueError('X Y and Z must be in range of 0-15')
+            raise OutOfBoundsCoordinates('X Y and Z must be in range of 0-15')
         index = y * 256 + z * 16 + x
         self.blocks[index] = block
 
@@ -40,7 +41,7 @@ class EmptySection:
         Will return the air block if its None internally
         """
         if not self.inside(x, y, z):
-            raise ValueError('X Y and Z must be in range of 0-15')
+            raise OutOfBoundsCoordinates('X Y and Z must be in range of 0-15')
         index = y * 256 + z * 16 + x
         return self.blocks[index] or self.air
 

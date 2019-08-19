@@ -1,6 +1,7 @@
 from typing import List
 from .block import Block
 from .empty_section import EmptySection
+from .errors import OutOfBoundsCoordinates
 from nbt import nbt
 
 class EmptyChunk:
@@ -26,9 +27,9 @@ class EmptyChunk:
         None means the section is empty, and the block is most likely an air block
         """
         if x < 0 or x > 15 or z < 0 or z > 15:
-            raise ValueError('X and Z must be in the range of 0-15')
+            raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
         if y < 0 or y > 255:
-            raise ValueError('Y must be in range 0-255')
+            raise OutOfBoundsCoordinates('Y must be in range 0-255')
         section = self.get_section(y // 16)
         if section is None: return
         return section.get_block(x, y % 16, z)
@@ -36,9 +37,9 @@ class EmptyChunk:
     def set_block(self, block: Block, x: int, y: int, z: int):
         """Sets block at given coordinates, x and z being 0-15 and y 0-255"""
         if x < 0 or x > 15 or z < 0 or z > 15:
-            raise ValueError('X and Z must be in the range of 0-15')
+            raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
         if y < 0 or y > 255:
-            raise ValueError('Y must be in range 0-255')
+            raise OutOfBoundsCoordinates('Y must be in range 0-255')
         section = self.get_section(y // 16)
         if section is None:
             section = EmptySection(y // 16)

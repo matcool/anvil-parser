@@ -1,6 +1,7 @@
 from typing import Union, List, BinaryIO
 from .empty_chunk import EmptyChunk
 from .block import Block
+from .errors import OutOfBoundsCoordinates
 from io import BytesIO
 from nbt import nbt
 import zlib
@@ -28,7 +29,7 @@ class EmptyRegion:
     def get_chunk(self, x: int, z: int) -> EmptyChunk:
         """Returns the chunk at given chunk coordinates"""
         if not self.inside(x, 0, z, chunk=True):
-            raise Exception('Given chunk coordinates do not belong in this region')
+            raise OutOfBoundsCoordinates('Given chunk coordinates do not belong in this region')
         return self.chunks[z % 32 * 32 + x % 32]
 
     def add_chunk(self, chunk: EmptyChunk):
@@ -37,7 +38,7 @@ class EmptyRegion:
         Will overwrite if a chunk already exists in this location
         """
         if not self.inside(chunk.x, 0, chunk.z, chunk=True):
-            raise Exception('Chunk does not belong in this region')
+            raise ValueError('Chunk does not belong in this region')
         self.chunks[chunk.z % 32 * 32 + chunk.x % 32] = chunk
 
     def set_block(self, block: Block, x: int, y: int, z: int):
@@ -46,7 +47,7 @@ class EmptyRegion:
         will make a new chunk if chunk at coords does not exist
         """
         if not self.inside(x, y, z):
-            raise ValueError('Coordinates do not belong in this region')
+            raise OutOfBoundsCoordinates('Given coordinates do not belong in this region')
         cx = x // 16
         cz = z // 16
         chunk = self.get_chunk(cx, cz)
