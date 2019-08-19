@@ -4,6 +4,7 @@ Needs the `opensimplex` package to work
 
 Generated terrain is 128x128 blocks and in the North-West corner
 """
+import _path
 import anvil
 from opensimplex import OpenSimplex
 import random

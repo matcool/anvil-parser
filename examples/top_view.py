@@ -12,9 +12,8 @@ else:
     chz = int(sys.argv[3])
 import os
 from PIL import Image
-sys.path.append('..')
+import _path
 import anvil
-sys.path.pop(0)
 
 chunk = anvil.Chunk.from_region(region, chx, chz)
 img = Image.new('RGBA', (16*16,16*16))
