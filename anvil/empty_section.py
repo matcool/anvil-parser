@@ -81,8 +81,8 @@ class EmptySection:
             # If it more than 64 bits then add to list and start over
             # with the remaining bits from last one
             if len(current) + bits > 64:
-                states.append(int(current, base=2))
                 leftover = len(current) + len(b) - 64
+                states.append(int(b[bits-leftover:] + current, base=2))
                 current = b[:leftover]
             else:
                 current = b + current

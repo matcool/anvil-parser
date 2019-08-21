@@ -102,6 +102,7 @@ class EmptyRegion:
             if chunk is None:
                 offsets.append(None)
                 continue
+            # 4 bytes are for length, b'\x02' is the compression type which is 2 since its using zlib
             to_add = (len(chunk)+1).to_bytes(4, 'big') + b'\x02' + chunk
             # (offset in 4KiB sectors, sector count)
             offsets.append((len(chunks_bytes) // 4096, math.ceil(len(to_add) / 4096)))
