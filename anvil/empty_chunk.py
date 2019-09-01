@@ -13,13 +13,17 @@ class EmptyChunk:
     def __init__(self, x: int, z: int):
         self.x = x
         self.z = z
-        self.sections: List[EmptySection] = []
+        self.sections: List[EmptySection] = [None]*16
         self.version = 1976
 
-    def get_section(self, y: int) -> EmptySection:
-        """Returns the section at given y index, None if not found"""
-        for s in self.sections:
-            if s.y == y: return s
+    def add_section(self, section: EmptySection, replace: bool = True):
+        """
+        Adds a section to the chunk
+        will raise an error if `replace` is False and the section already exists
+        """
+        if self.sections[section.y] and not replace:
+            raise Exception('Section already exists')
+        self.sections[section.y] = section
 
     def get_block(self, x: int, y: int, z: int) -> Block:
         """
@@ -30,7 +34,7 @@ class EmptyChunk:
             raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
         if y < 0 or y > 255:
             raise OutOfBoundsCoordinates('Y must be in range 0-255')
-        section = self.get_section(y // 16)
+        section = self.sections[y // 16]
         if section is None: return
         return section.get_block(x, y % 16, z)
 
@@ -40,10 +44,10 @@ class EmptyChunk:
             raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
         if y < 0 or y > 255:
             raise OutOfBoundsCoordinates('Y must be in range 0-255')
-        section = self.get_section(y // 16)
+        section = self.sections[y // 16]
         if section is None:
             section = EmptySection(y // 16)
-            self.sections.append(section)
+            self.add_section(section)
         section.set_block(block, x, y % 16, z)
 
     def save(self) -> nbt.NBTFile:
