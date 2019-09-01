@@ -3,6 +3,14 @@ from nbt import nbt
 from .block import Block
 from .region import Region
 
+def bin_append(a, b, length=None):
+    """
+    Appends number a to the left of b
+    bin_append(0b1, 0b10) = 0b110
+    """
+    length = length or b.bit_length()
+    return (a << length) | b
+
 class Chunk:
     def __init__(self, nbt_data: nbt.NBTFile):
         self.version = nbt_data['DataVersion']
@@ -59,14 +67,6 @@ class Chunk:
 
         # Get index on the block list with the order YZX
         index = y * 16*16 + z * 16 + x
-
-        def bin_append(a, b, length=None):
-            """
-            Appends number a to the left of b
-            bin_append(0b1, 0b10) = 0b110
-            """
-            length = length or b.bit_length()
-            return (a << length) | b
 
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
