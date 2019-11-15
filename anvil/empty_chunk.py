@@ -75,11 +75,12 @@ class EmptyChunk:
         ])
         sections = nbt.TAG_List(name='Sections', type=nbt.TAG_Compound)
         for s in self.sections:
-            p = s.palette()
-            # Minecraft does not save sections that are just air
-            # So we can just skip them
-            if len(p) == 1 and p[0].name() == 'minecraft:air': continue
-            sections.tags.append(s.save())
+            if s:
+                p = s.palette()
+                # Minecraft does not save sections that are just air
+                # So we can just skip them
+                if len(p) == 1 and p[0].name() == 'minecraft:air': continue
+                sections.tags.append(s.save())
         level.tags.append(sections)
         root.tags.append(level)
         return root

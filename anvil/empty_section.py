@@ -6,8 +6,12 @@ from struct import Struct
 
 # dirty mixin to change q to Q
 def _update_fmt(self, length):
-    self.fmt = Struct(f'>{str(length)}Q')
+    self.fmt = Struct(f'>{length}Q')
 nbt.TAG_Long_Array.update_fmt = _update_fmt
+
+def to_bin(n: int, length: int=None):
+    if length is None: length = n.bit_length()
+    return '0'*(length - max(n.bit_length(), 1)) + bin(n)[2:]
 
 class EmptySection:
     """
@@ -69,9 +73,6 @@ class EmptySection:
         bits = max((len(palette) - 1).bit_length(), 4)
         states = []
         current = ''
-        def to_bin(n: int, length: int=None):
-            if length is None: length = n.bit_length()
-            return '0'*(length-max(n.bit_length(), 1)) + bin(n)[2:]
         for block in self.blocks:
             if block is None:
                 index = palette.index(self.air)
@@ -81,8 +82,8 @@ class EmptySection:
             # If it more than 64 bits then add to list and start over
             # with the remaining bits from last one
             if len(current) + bits > 64:
-                leftover = len(current) + len(b) - 64
-                states.append(int(b[bits-leftover:] + current, base=2))
+                leftover = len(current) + bits - 64
+                states.append(int(b[bits - (64 - len(current)):] + current, base=2))
                 current = b[:leftover]
             else:
                 current = b + current
