@@ -10,6 +10,7 @@ or directly from github
 pip install git+https://github.com/matcool/anvil-parser.git
 ```
 # Usage
+## Reading
 ```python
 import anvil
 
@@ -26,5 +27,26 @@ print(block) # <Block(minecraft:air)>
 print(block.id) # air
 print(block.properties) # {}
 ```
+## Making own regions
+```python
+import anvil
+from random import choice
+
+# Create a new region with the `EmptyRegion` class at 0, 0 (in region coords)
+region = anvil.EmptyRegion(0, 0)
+
+# Create `Block` objects that are used to set blocks
+stone = anvil.Block('minecraft', 'stone')
+dirt = anvil.Block('minecraft', 'dirt')
+
+# Make a 16x16x16 cube of either stone or dirt blocks
+for y in range(16):
+    for z in range(16):
+        for x in range(16):
+            region.set_block(choice((stone, dirt)), x, y, z)
+
+# Save to a file
+region.save('r.0.0.mca')
+```
 # Note
-Still contains some bugs, testing done with saves from 1.14.4, and in DataVersion 1976
+May contains some bugs, testing done with saves from 1.14.4, and in DataVersion 1976
