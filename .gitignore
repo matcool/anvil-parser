@@ -1,3 +1,5 @@
 __pycache__/
 textures/
 dist/
+build/
+*.egg-info/

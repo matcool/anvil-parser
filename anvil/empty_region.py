@@ -61,9 +61,7 @@ class EmptyRegion:
         if self.inside(x, y, z): self.set_block(block, x, y, z)
 
     def fill(self, block: Block, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, ignore_outside: bool=False):
-        """
-        Fills in blocks from (x1,y1,z1) to (x2,y2,z2)
-        """
+        """Fills in blocks from (x1,y1,z1) to (x2,y2,z2)"""
         if not ignore_outside:
             if not self.inside(x1, y1, z1):
                 raise OutOfBoundsCoordinates('First coordinates do not belong in this region')

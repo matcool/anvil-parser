@@ -77,7 +77,7 @@ class Chunk:
 
         # makes sure the number is unsigned
         # by adding 2^64
-        # could also use ctypes.c_ulonglong(n).value but that'd require and extra import
+        # could also use ctypes.c_ulonglong(n).value but that'd require an extra import
         data = states[state]
         if data < 0: data += 2**64
 
@@ -99,7 +99,7 @@ class Chunk:
             # will result in bin_append(0b010, 0b01, 2) = 0b01001
             shifted_data = bin_append(data & 2**leftover-1, shifted_data, bits-leftover)
         
-        # and to get the (bits) least significant bits
+        # get `bits` least significant bits
         # which are the palette index
         palette_id = shifted_data & 2**bits-1
 
