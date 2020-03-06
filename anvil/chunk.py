@@ -110,7 +110,7 @@ class Chunk:
         block = section['Palette'][palette_id]
         return Block.from_palette(block)
 
-    def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
+    def stream_blocks(self, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
         if isinstance(section, int) and (section < 0 or section > 16):
             raise OutOfBoundsCoordinates()
 
@@ -126,6 +126,9 @@ class Chunk:
         palette = section['Palette']
 
         bits = max((len(palette) - 1).bit_length(), 4)
+
+        # TODO: custom indexes
+        index = 0
         
         state = index * bits // 64
 
