@@ -36,9 +36,10 @@ class Chunk:
         Returns the block palette for given section, which can either be nbt tags or the y index
         Output is a tuple of Blocks
         """
-        if type(section) == int:
+        if isinstance(section, int):
             section = self.get_section(section)
-        if section == None: return
+        if section is None:
+            return
         return tuple(Block.from_palette(i) for i in section['Palette'])
 
     def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None) -> Block:
@@ -52,13 +53,13 @@ class Chunk:
         if y < 0 or y > 255:
             raise ValueError('Y must be in the range of 0 to 255')
         
-        if section == None:
+        if section is None:
             section = self.get_section(y // 16)
             # global Y to section Y
             y %= 16
 
         # If its an empty section its most likely an air block 
-        if section == None or section.get('BlockStates') == None:
+        if section is None or section.get('BlockStates') is None:
             return Block.from_name('minecraft:air')
 
         # Number of bits each block is on BlockStates
@@ -79,7 +80,8 @@ class Chunk:
         # by adding 2^64
         # could also use ctypes.c_ulonglong(n).value but that'd require an extra import
         data = states[state]
-        if data < 0: data += 2**64
+        if data < 0:
+            data += 2**64
 
         # shift the number to the right to remove the left over bits
         # and shift so the i'th block is the first one
@@ -88,7 +90,8 @@ class Chunk:
         # if there arent enough bits it means the rest are in the next number
         if 64 - ((bits * index) % 64) < bits:
             data = states[state + 1]
-            if data < 0: data += 2**64
+            if data < 0:
+                data += 2**64
             # get how many bits are from a palette index of the next block
             leftover = (bits - ((state + 1) * 64 % bits)) % bits
 
@@ -112,7 +115,7 @@ class Chunk:
         Creates a new chunk from region and the chunk's X and Z
         region can either be the name of the region file, or a Region object
         """
-        if type(region) == str:
+        if isinstance(region, str):
             region = Region.from_file(region)
         nbt_data = region.chunk_data(chunkX, chunkZ)
         if nbt_data is None:

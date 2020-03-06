@@ -22,7 +22,8 @@ for y in reversed(range(256)):
     for z in range(16):
         for x in range(16):
             b = chunk.get_block(x, y, z).id
-            if b == 'air' or grid[z][x] != None: continue
+            if b == 'air' or grid[z][x] is not None:
+                continue
             grid[z][x] = b
 
 texturesf = os.listdir('textures/block')
@@ -30,14 +31,16 @@ textures = {}
 for z in range(16):
     for x in range(16):
         b = grid[z][x]
-        if b == None: continue
+        if b is None:
+            continue
         if b not in textures:
             if b+'.png' not in texturesf:
                 print(f'Skipping {b}')
                 textures[b] = None
                 continue
             textures[b] = Image.open(f'textures/block/{b}.png')
-        if textures[b] == None: continue
+        if textures[b] is None:
+            continue
         img.paste(textures[b], box=(x*16, z*16))
 
 img.show()

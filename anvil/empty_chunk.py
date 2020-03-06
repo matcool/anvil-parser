@@ -35,7 +35,8 @@ class EmptyChunk:
         if y < 0 or y > 255:
             raise OutOfBoundsCoordinates('Y must be in range 0-255')
         section = self.sections[y // 16]
-        if section is None: return
+        if section is None:
+            return
         return section.get_block(x, y % 16, z)
 
     def set_block(self, block: Block, x: int, y: int, z: int):
@@ -79,7 +80,8 @@ class EmptyChunk:
                 p = s.palette()
                 # Minecraft does not save sections that are just air
                 # So we can just skip them
-                if len(p) == 1 and p[0].name() == 'minecraft:air': continue
+                if len(p) == 1 and p[0].name() == 'minecraft:air':
+                    continue
                 sections.tags.append(s.save())
         level.tags.append(sections)
         root.tags.append(level)

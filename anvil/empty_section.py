@@ -10,7 +10,8 @@ def _update_fmt(self, length):
 nbt.TAG_Long_Array.update_fmt = _update_fmt
 
 def to_bin(n: int, length: int=None):
-    if length is None: length = n.bit_length()
+    if length is None:
+        length = n.bit_length()
     return '0'*(length - max(n.bit_length(), 1)) + bin(n)[2:]
 
 class EmptySection:
@@ -105,12 +106,12 @@ class EmptySection:
                 properties = nbt.TAG_Compound()
                 properties.name = 'Properties'
                 for key, value in block.properties.items():
-                    if type(value) == str:
+                    if isinstance(value, str):
                         properties.tags.append(nbt.TAG_String(name=key, value=value))
-                    elif type(value) == bool:
+                    elif isinstance(value, bool):
                         # booleans are a string saved as either 'true' or 'false'
                         properties.tags.append(nbt.TAG_String(name=key, value=str(value).lower()))
-                    elif type(value) == int:
+                    elif isinstance(value, int):
                         # ints also seem to be saved as a string
                         properties.tags.append(nbt.TAG_String(name=key, value=str(value)))
                     else:
