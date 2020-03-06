@@ -1,4 +1,4 @@
-# anvil-parser
+# anvil-parser [![CodeFactor](https://www.codefactor.io/repository/github/matcool/anvil-parser/badge/master)](https://www.codefactor.io/repository/github/matcool/anvil-parser/overview/master)
 Simple parser for the [Minecraft anvil file format](https://minecraft.gamepedia.com/Anvil_file_format)
 # Installation
 This project is available on [PyPI](https://pypi.org/project/anvil-parser/) and can be installed with pip
