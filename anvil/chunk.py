@@ -1,7 +1,8 @@
-from typing import Union, Tuple
+from typing import Union, Tuple, Generator
 from nbt import nbt
 from .block import Block
 from .region import Region
+from .errors import OutOfBoundsCoordinates
 
 def bin_append(a, b, length=None):
     """
@@ -108,6 +109,52 @@ class Chunk:
 
         block = section['Palette'][palette_id]
         return Block.from_palette(block)
+
+    def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
+        if isinstance(section, int) and (section < 0 or section > 16):
+            raise OutOfBoundsCoordinates()
+
+        # For better understanding of this code, read get_block()'s source
+
+        if section is None or isinstance(section, int):
+            section = self.get_section(section or 0)
+
+        if section is None or section.get('BlockStates') is None:
+            return Block.from_name('minecraft:air')
+
+        states = section['BlockStates'].value
+        palette = section['Palette']
+
+        bits = max((len(palette) - 1).bit_length(), 4)
+        
+        state = index * bits // 64
+
+        data = states[state]
+        if data < 0:
+            data += 2**64
+
+        bits_mask = 2**bits - 1
+
+        data_len = 64
+
+        while index < 4096:
+            if data_len < bits:
+                state += 1
+                new_data = states[state]
+                if new_data < 0:
+                    new_data += 2**64
+
+                leftover = data_len
+                data_len += 64
+
+                data = bin_append(new_data, data, leftover)
+
+            palette_id = data & bits_mask
+            yield Block.from_palette(palette[palette_id])
+
+            index += 1
+            data >>= bits
+            data_len -= bits
         
     @classmethod
     def from_region(cls, region: Union[str, Region], chunkX: int, chunkZ: int):
