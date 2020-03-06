@@ -1,12 +1,9 @@
 from __future__ import annotations
-from typing import Tuple, Union, BinaryIO, TYPE_CHECKING
+from typing import Tuple, Union, BinaryIO
 from nbt import nbt
 import zlib
 from io import BytesIO
-# This mess is so i can use Chunk in an type annotation
 import anvil
-if TYPE_CHECKING:
-    from anvil import Chunk
 
 class Region:
     def __init__(self, data: bytes):
@@ -44,7 +41,7 @@ class Region:
         compressed_data = self.data[off + 5 : off + 5 + length - 1]
         return nbt.NBTFile(buffer=BytesIO(zlib.decompress(compressed_data)))
 
-    def get_chunk(self, chunkX: int, chunkZ: int) -> Chunk:
+    def get_chunk(self, chunkX: int, chunkZ: int) -> 'Chunk':
         """
         Returns the chunk at given coordinates,
         same as doing Chunk.from_region(`this`, chunkX, chunkZ)
