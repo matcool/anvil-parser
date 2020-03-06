@@ -93,6 +93,7 @@ class EmptyRegion:
             chunk_data.seek(0)
             chunk_data = zlib.compress(chunk_data.read())
             chunks_data.append(chunk_data)
+
         # This is what is added after the location and timestamp header
         chunks_bytes = bytes()
         offsets = []
@@ -102,11 +103,16 @@ class EmptyRegion:
                 continue
             # 4 bytes are for length, b'\x02' is the compression type which is 2 since its using zlib
             to_add = (len(chunk)+1).to_bytes(4, 'big') + b'\x02' + chunk
-            # (offset in 4KiB sectors, sector count)
-            offsets.append((len(chunks_bytes) // 4096, math.ceil(len(to_add) / 4096)))
+
+            # offset in 4KiB sectors
+            sector_offset = len(chunks_bytes) // 4096
+            sector_count = math.ceil(len(to_add) / 4096)
+            offsets.append((sector_offset, sector_count))
+
             # Padding to be a multiple of 4KiB long
             to_add += bytes(4096 - (len(to_add) % 4096))
             chunks_bytes += to_add
+
         locations_header = bytes()
         for offset in offsets:
             # None means the chunk is not an actual chunk in the region
@@ -114,17 +120,22 @@ class EmptyRegion:
             if offset is None:
                 locations_header += bytes(4)
             else:
-                locations_header += (offset[0]+2).to_bytes(3, 'big') + offset[1].to_bytes(1, 'big')
+                # offset is (sector offset, sector count)
+                locations_header += (offset[0] + 2).to_bytes(3, 'big') + offset[1].to_bytes(1, 'big')
+
         # Set them all as 0
         timestamps_header = bytes(4096)
+
         final = locations_header + timestamps_header + chunks_bytes
+
         # Pad file to be a multiple of 4KiB in size
         # as Minecraft only accepts region files that are like that
         final += bytes(4096 - (len(final) % 4096))
-        assert len(final) % 4096 == 0
+        assert len(final) % 4096 == 0 # just in case
+
         # Save to a file if it was given
         if file:
-            if type(file) == str:
+            if isinstance(file, str):
                 with open(file, 'wb') as f:
                     f.write(final)
             else:

@@ -63,11 +63,9 @@ class EmptySection:
 
     def blockstates(self, palette: Tuple[Block]=None) -> List[int]:
         """
-        Returns a list of numbers, which are the blocks data
-        This is used in the BlockStates tag of the section 
-        The list should always be the length of bits * 4096 / 64,
-        with bits being the bit length of the number of blocks in the palette,
-        and that being atleast 4
+        Returns a list of each block's index in the palette.
+        
+        This is used in the BlockStates tag of the section.
         """
         palette = palette or self.palette()
         bits = max((len(palette) - 1).bit_length(), 4)
@@ -79,7 +77,7 @@ class EmptySection:
             else:
                 index = palette.index(block)
             b = to_bin(index, length=bits)
-            # If it more than 64 bits then add to list and start over
+            # If it's more than 64 bits then add to list and start over
             # with the remaining bits from last one
             if len(current) + bits > 64:
                 leftover = len(current) + bits - 64
@@ -93,8 +91,7 @@ class EmptySection:
     def save(self) -> nbt.TAG_Compound:
         """
         Saves the section to an TAG_Compound and is used inside the chunk tag
-        This is missing the SkyLight tag, but minecraft still accepts it anyway,
-        and generates the values
+        This is missing the SkyLight tag, but minecraft still accepts it anyway
         """
         root = nbt.TAG_Compound()
         root.tags.append(nbt.TAG_Byte(name='Y', value=self.y))

@@ -63,7 +63,7 @@ class Chunk:
 
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
-        bits = max((len(section['Palette'])-1).bit_length(), 4)
+        bits = max((len(section['Palette']) - 1).bit_length(), 4)
 
         # Get index on the block list with the order YZX
         index = y * 16*16 + z * 16 + x
@@ -87,7 +87,7 @@ class Chunk:
 
         # if there arent enough bits it means the rest are in the next number
         if 64 - ((bits * index) % 64) < bits:
-            data = states[state+1]
+            data = states[state + 1]
             if data < 0: data += 2**64
             # get how many bits are from a palette index of the next block
             leftover = (bits - ((state + 1) * 64 % bits)) % bits
@@ -97,11 +97,11 @@ class Chunk:
             # Next state                Current state (already shifted)
             # 0b101010110101101010010   0b01
             # will result in bin_append(0b010, 0b01, 2) = 0b01001
-            shifted_data = bin_append(data & 2**leftover-1, shifted_data, bits-leftover)
+            shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
         
         # get `bits` least significant bits
         # which are the palette index
-        palette_id = shifted_data & 2**bits-1
+        palette_id = shifted_data & 2**bits - 1
 
         block = section['Palette'][palette_id]
         return Block.from_palette(block)

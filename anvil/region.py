@@ -33,12 +33,12 @@ class Region:
     def chunk_data(self, chunkX: int, chunkZ: int) -> nbt.NBTFile:
         """Returns the NBT chunk data"""
         off = self.chunk_location(chunkX, chunkZ)
-        # (0, 0) means it hasnt generated yet, aka it doesnt exist yet
+        # (0, 0) means it hasn't generated yet, aka it doesn't exist yet
         if off == (0, 0):
             return
         off = off[0] * 4096
-        length = int.from_bytes(self.data[off : off + 4], byteorder='big')
-        compression = self.data[off+4] # 2 most of the time
+        length = int.from_bytes(self.data[off:off + 4], byteorder='big')
+        compression = self.data[off + 4] # 2 most of the time
         if compression == 1:
             raise Exception('GZip is not supported')
         compressed_data = self.data[off + 5 : off + 5 + length - 1]
