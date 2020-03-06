@@ -14,7 +14,8 @@ class Block:
         return f'<Block({self.name()})>'
 
     def __eq__(self, other):
-        if not isinstance(other, Block): return False
+        if not isinstance(other, Block):
+            return False
         return self.namespace == other.namespace and self.id == other.id and self.properties == other.properties
 
     def __hash__(self):
