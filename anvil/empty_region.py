@@ -7,6 +7,11 @@ from nbt import nbt
 import zlib
 import math
 
+def from_inclusive(a, b):
+    """Returns a range from a to b, including both endpoints"""
+    c = int(b > a)*2-1
+    return range(a, b+c, c)
+
 class EmptyRegion:
     """
     Class used for making own regions
@@ -69,10 +74,7 @@ class EmptyRegion:
                 raise OutOfBoundsCoordinates('First coordinates do not belong in this region')
             if not self.inside(x2, y2, z2):
                 raise OutOfBoundsCoordinates('Second coordinates do not belong in this region')
-        def from_inclusive(a, b):
-            """Returns a range from a to b, including both endpoints"""
-            c = int(b > a)*2-1
-            return range(a, b+c, c)
+
         for y in from_inclusive(y1, y2):
             for z in from_inclusive(z1, z2):
                 for x in from_inclusive(x1, x2):
