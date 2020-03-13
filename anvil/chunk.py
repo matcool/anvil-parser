@@ -13,6 +13,8 @@ def bin_append(a, b, length=None):
     return (a << length) | b
 
 class Chunk:
+    __slots__ = ('version', 'data', 'x', 'z')
+
     def __init__(self, nbt_data: nbt.NBTFile):
         self.version = nbt_data['DataVersion']
         self.data = nbt_data['Level']

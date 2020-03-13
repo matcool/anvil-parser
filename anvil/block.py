@@ -2,6 +2,8 @@ from nbt import nbt
 from frozendict import frozendict
 
 class Block:
+    __slots__ = ('namespace', 'id', 'properties')
+
     def __init__(self, namespace: str, block_id: str, properties: dict=None):
         self.namespace = namespace
         self.id = block_id

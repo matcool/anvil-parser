@@ -10,6 +10,7 @@ class EmptyChunk:
     Cannot yet be interchanged with the regular `Chunk` class,
     as it is currently only used when reading mca files
     """
+    __slots__ = ('x', 'z', 'sections', 'version')
     def __init__(self, x: int, z: int):
         self.x = x
         self.z = z

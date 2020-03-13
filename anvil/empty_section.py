@@ -21,6 +21,7 @@ class EmptySection:
     To save up some space, None is used instead of the air block object
     and will be replaced with `self.air` when needed
     """
+    __slots__ = ('y', 'blocks', 'air')
     def __init__(self, y: int):
         self.y = y
         # None is the same as an air block

@@ -6,6 +6,7 @@ from io import BytesIO
 import anvil
 
 class Region:
+    __slots__ = ('data',)
     def __init__(self, data: bytes):
         """Makes a Region object from data, which is the region file content"""
         self.data = data

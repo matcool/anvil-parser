@@ -13,6 +13,7 @@ class EmptyRegion:
     Cannot yet be interchanged with the regular `Region` class,
     as it is currently only used when reading mca files
     """
+    __slots__ = ('chunks', 'x', 'z')
     def __init__(self, x: int, z: int):
         # Create a 1d list for the 32x32 chunks
         self.chunks: List[EmptyChunk] = [None] * 1024
