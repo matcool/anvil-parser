@@ -3,16 +3,16 @@ from . import Block
 from .errors import OutOfBoundsCoordinates
 from nbt import nbt
 from struct import Struct
+import array
 
 # dirty mixin to change q to Q
 def _update_fmt(self, length):
     self.fmt = Struct(f'>{length}Q')
 nbt.TAG_Long_Array.update_fmt = _update_fmt
 
-def to_bin(n: int, length: int=None):
-    if length is None:
-        length = n.bit_length()
-    return '0'*(length - max(n.bit_length(), 1)) + bin(n)[2:]
+def bin_append(a, b, length=None):
+    length = length or b.bit_length()
+    return (a << length) | b
 
 class EmptySection:
     """
@@ -63,7 +63,7 @@ class EmptySection:
             palette.add(self.air)
         return tuple(palette)
 
-    def blockstates(self, palette: Tuple[Block]=None) -> List[int]:
+    def blockstates(self, palette: Tuple[Block]=None) -> array.array:
         """
         Returns a list of each block's index in the palette.
         
@@ -71,23 +71,25 @@ class EmptySection:
         """
         palette = palette or self.palette()
         bits = max((len(palette) - 1).bit_length(), 4)
-        states = []
-        current = ''
+        states = array.array('Q')
+        current = 0
+        current_len = 0
         for block in self.blocks:
             if block is None:
                 index = palette.index(self.air)
             else:
                 index = palette.index(block)
-            b = to_bin(index, length=bits)
             # If it's more than 64 bits then add to list and start over
             # with the remaining bits from last one
-            if len(current) + bits > 64:
-                leftover = len(current) + bits - 64
-                states.append(int(b[bits - (64 - len(current)):] + current, base=2))
-                current = b[:leftover]
+            if current_len + bits > 64:
+                leftover = 64 - current_len
+                states.append(bin_append(index & ((1 << leftover) - 1), current, length=current_len))
+                current = index >> leftover
+                current_len = bits - leftover
             else:
-                current = b + current
-        states.append(int(current, base=2))
+                current = bin_append(index, current, length=current_len)
+                current_len += bits
+        states.append(current)
         return states
 
     def save(self) -> nbt.TAG_Compound:
