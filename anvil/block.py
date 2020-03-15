@@ -4,9 +4,13 @@ from frozendict import frozendict
 class Block:
     __slots__ = ('namespace', 'id', 'properties')
 
-    def __init__(self, namespace: str, block_id: str, properties: dict=None):
-        self.namespace = namespace
-        self.id = block_id
+    def __init__(self, namespace: str, block_id: str=None, properties: dict=None):
+        if block_id is None:
+            self.namespace = 'minecraft'
+            self.id = namespace
+        else:
+            self.namespace = namespace
+            self.id = block_id
         self.properties = properties or {}
 
     def name(self):
