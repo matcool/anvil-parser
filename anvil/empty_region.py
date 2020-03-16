@@ -1,5 +1,6 @@
 from typing import Union, List, BinaryIO
 from .empty_chunk import EmptyChunk
+from .empty_section import EmptySection
 from .block import Block
 from .errors import OutOfBoundsCoordinates
 from io import BytesIO
@@ -46,6 +47,15 @@ class EmptyRegion:
         if not self.inside(chunk.x, 0, chunk.z, chunk=True):
             raise ValueError('Chunk does not belong in this region')
         self.chunks[chunk.z % 32 * 32 + chunk.x % 32] = chunk
+
+    def add_section(self, section: EmptySection, x: int, z: int, replace: bool=True):
+        if not self.inside(x, 0, z, chunk=True):
+            raise ValueError('Section does not belong in this region')
+        chunk = self.chunks[z % 32 * 32 + x % 32]
+        if chunk is None:
+            chunk = EmptyChunk(x, z)
+            self.add_chunk(chunk)
+        chunk.add_section(section, replace)
 
     def set_block(self, block: Block, x: int, y: int, z: int):
         """
