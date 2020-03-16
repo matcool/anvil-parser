@@ -48,5 +48,10 @@ for y in range(16):
 # Save to a file
 region.save('r.0.0.mca')
 ```
+# Todo
+*things to do before 1.0.0*
+- [ ] Proper documentation
+- [ ] Biomes
+- [ ] More tests
 # Note
-May contains some bugs, testing done with saves from 1.14.4, and in DataVersion 1976
+Testing done in 1.14.4 and 1.15.2, should work fine for other versions.
