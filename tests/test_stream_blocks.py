@@ -49,7 +49,7 @@ def test_5bits():
         else:
             assert block.id == 'air'
 
-def disabled_test_index():
+def test_index():
     region = EmptyRegion(0, 0)
 
     region.set_block(Block('minecraft', 'dirt'), 2, 0, 0)
@@ -60,14 +60,14 @@ def disabled_test_index():
 
     region = Region(region.save())
 
-    for i, block in enumerate(region.get_chunk(0, 0).stream_blocks(2)):
+    for i, block in enumerate(region.get_chunk(0, 0).stream_blocks(index=2)):
         i += 2
         if i < len(blocks):
             assert block.id == blocks[i]
         else:
             assert block.id == 'air'
 
-def disabled_test_index_5bits():
+def test_index_5bits():
     region = EmptyRegion(0, 0)
 
     region.set_block(Block('minecraft', 'dirt'), 2, 0, 0)
@@ -78,7 +78,7 @@ def disabled_test_index_5bits():
 
     region = Region(region.save())
     
-    for i, block in enumerate(region.get_chunk(0, 0).stream_blocks(17)):
+    for i, block in enumerate(region.get_chunk(0, 0).stream_blocks(index=17)):
         i += 17
         if i < len(blocks):
             assert block.id == blocks[i]
