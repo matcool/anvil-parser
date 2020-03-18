@@ -14,6 +14,21 @@ def bin_append(a, b, length=None):
     return (a << length) | b
 
 class Chunk:
+    """
+    Represents a chunk from a ``.mca`` file.
+
+    Note that this is read only.
+    Attributes
+    ----------
+    x: :class:`int`
+        Chunk's X position
+    z: :class:`int`
+        Chunk's Z position
+    version: :class:`int`
+        Version of the chunk NBT structure
+    data: :class:`nbt.TAG_Compound`
+        Raw NBT data of the chunk
+    """
     __slots__ = ('version', 'data', 'x', 'z')
 
     def __init__(self, nbt_data: nbt.NBTFile):
@@ -25,9 +40,17 @@ class Chunk:
     def get_section(self, y: int) -> nbt.TAG_Compound:
         """
         Returns the section at given y index
-        can also return nothing if section is missing, aka its empty
+        can also return nothing if section is missing, aka it's empty
 
-        Errors if y is not in range of 0 and 15
+        Parameters
+        ----------
+        y
+            Section Y index
+
+        Raises
+        ------
+        ValueError
+            If Y is not in range of 0 and 15
         """
         if y < 0 or y > 15:
             raise ValueError('Y index must be in the range of 0 to 15')
@@ -37,8 +60,15 @@ class Chunk:
 
     def get_palette(self, section: Union[int, nbt.TAG_Compound]) -> Tuple[Block]:
         """
-        Returns the block palette for given section, which can either be nbt tags or the y index
-        Output is a tuple of Blocks
+        Returns the block palette for given section
+
+        Parameters
+        ----------
+        section
+            Either a section NBT tag or an index
+
+
+        :rtype: Tuple[:class:`anvil.Block`]
         """
         if isinstance(section, int):
             section = self.get_section(section)
@@ -48,9 +78,24 @@ class Chunk:
 
     def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None) -> Block:
         """
-        Returns Block in the given coordinates, with them being relative to the chunk
-        If section was not given, assumes Y is on global coords and gets section from it,
-        else uses the section and assumes Y is relative to the section
+        Returns the block in the given coordinates
+
+        Parameters
+        ----------
+        int x, y, z
+            Block's coordinates in the chunk
+        section : int
+            Either a section NBT tag or an index. If no section is given,
+            assume Y is global and use it for getting the section.
+
+        Raises
+        ------
+        ValueError
+            If X or Z aren't in the range of 0 to 15,
+            or if Y isn't in the range of 0 to 255
+
+        
+        :rtype: :class:`anvil.Block`
         """
         if x < 0 or x > 15 or z < 0 or z > 15:
             raise ValueError('X and Z must be in the range of 0 to 15')
@@ -114,6 +159,17 @@ class Chunk:
         return Block.from_palette(block)
 
     def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
+        """
+        oaoaoa
+
+        Yields
+        ------
+        anvil.Block
+            Yeah
+
+
+        :rtype:
+        """
         if isinstance(section, int) and (section < 0 or section > 16):
             raise OutOfBoundsCoordinates()
 
