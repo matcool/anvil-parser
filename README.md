@@ -1,4 +1,4 @@
-# anvil-parser [![CodeFactor](https://www.codefactor.io/repository/github/matcool/anvil-parser/badge/master)](https://www.codefactor.io/repository/github/matcool/anvil-parser/overview/master)
+# anvil-parser [![CodeFactor](https://www.codefactor.io/repository/github/matcool/anvil-parser/badge/master)](https://www.codefactor.io/repository/github/matcool/anvil-parser/overview/master) [![Documentation Status](https://readthedocs.org/projects/anvil-parser/badge/?version=latest)](https://anvil-parser.readthedocs.io/en/latest/?badge=latest)
 Simple parser for the [Minecraft anvil file format](https://minecraft.gamepedia.com/Anvil_file_format)
 # Installation
 This project is available on [PyPI](https://pypi.org/project/anvil-parser/) and can be installed with pip
@@ -50,7 +50,7 @@ region.save('r.0.0.mca')
 ```
 # Todo
 *things to do before 1.0.0*
-- [ ] Proper documentation
+- [x] Proper documentation
 - [ ] Biomes
 - [ ] More tests
 # Note
