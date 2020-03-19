@@ -6,9 +6,18 @@ from nbt import nbt
 
 class EmptyChunk:
     """
-    Class used for making own chunks
-    Cannot yet be interchanged with the regular `Chunk` class,
-    as it is currently only used when reading mca files
+    Used for making own chunks
+
+    Attributes
+    ----------
+    x: :class:`int`
+        Chunk's X position
+    z: :class:`int`
+        Chunk's Z position
+    sections: List[:class:`anvil.EmptySection`]
+        List of all the sections in this chunk
+    version: :class:`int`
+        Chunk's DataVersion
     """
     __slots__ = ('x', 'z', 'sections', 'version')
     def __init__(self, x: int, z: int):
@@ -20,7 +29,18 @@ class EmptyChunk:
     def add_section(self, section: EmptySection, replace: bool = True):
         """
         Adds a section to the chunk
-        will raise an error if `replace` is False and the section already exists
+
+        Parameters
+        ----------
+        section
+            Section to add
+        replace
+            Whether to replace section if one at same Y already exists
+        
+        Raises
+        ------
+        Exception
+            If ``replace`` is ``False`` and section at Y exists
         """
         if self.sections[section.y] and not replace:
             raise Exception('Section already exists')
@@ -28,8 +48,25 @@ class EmptyChunk:
 
     def get_block(self, x: int, y: int, z: int) -> Block:
         """
-        Gets the block at given coordinates, x and z being 0-15 and y 0-255
-        None means the section is empty, and the block is most likely an air block
+        Gets the block at given coordinates
+        
+        Parameters
+        ----------
+        int x, z
+            In range of 0 to 15
+        y
+            In range of 0 to 255
+
+        Raises
+        ------
+        OutOfBoundCoordidnates
+            If X, Y or Z are not in the proper range
+
+        Returns
+        -------
+        block : :class:`anvil.Block` or None
+            Returns ``None`` if the section is empty, meaning the block
+            is most likely an air block.
         """
         if x < 0 or x > 15 or z < 0 or z > 15:
             raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
@@ -41,7 +78,16 @@ class EmptyChunk:
         return section.get_block(x, y % 16, z)
 
     def set_block(self, block: Block, x: int, y: int, z: int):
-        """Sets block at given coordinates, x and z being 0-15 and y 0-255"""
+        """
+        Sets block at given coordinates
+        
+        Parameters
+        ----------
+        int x, z
+            In range of 0 to 15
+        y
+            In range of 0 to 255
+        """
         if x < 0 or x > 15 or z < 0 or z > 15:
             raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
         if y < 0 or y > 255:
@@ -54,9 +100,12 @@ class EmptyChunk:
 
     def save(self) -> nbt.NBTFile:
         """
-        Saves the chunk data to an NBTFile
+        Saves the chunk data to a :class:`NBTFile`
+
+        Notes
+        -----
         Does not contain most data a regular chunk would have,
-        but minecraft stills accept it
+        but minecraft stills accept it.
         """
         root = nbt.NBTFile()
         root.tags.append(nbt.TAG_Int(name='DataVersion',value=self.version))

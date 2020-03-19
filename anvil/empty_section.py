@@ -16,10 +16,20 @@ def bin_append(a, b, length=None):
 
 class EmptySection:
     """
-    Class used for making own sections
-    This is where the blocks are actually stored, in a 16*16*16 sized array
-    To save up some space, None is used instead of the air block object
-    and will be replaced with `self.air` when needed
+    Used for making own sections.
+
+    This is where the blocks are actually stored, in a 16³ sized array.
+    To save up some space, ``None`` is used instead of the air block object,
+    and will be replaced with ``self.air`` when needed
+
+    Attributes
+    ----------
+    y: :class:`int`
+        Section's Y index
+    blocks: List[:class:`Block`]
+        1D list of blocks
+    air: :class:`Block`
+        An air block
     """
     __slots__ = ('y', 'blocks', 'air')
     def __init__(self, y: int):
@@ -31,11 +41,32 @@ class EmptySection:
 
     @staticmethod
     def inside(x: int, y: int, z: int) -> bool:
-        """Basic method to check if X Y and Z are in range of 0-15"""
+        """
+        Check if X Y and Z are in range of 0-15
+        
+        Parameters
+        ----------
+        int x, y, z
+            Coordinates
+        """
         return x >= 0 and x <= 15 and y >= 0 and y <= 15 and z >= 0 and z <= 15
 
     def set_block(self, block: Block, x: int, y: int, z: int):
-        """Sets the block at given coordinates"""
+        """
+        Sets the block at given coordinates
+        
+        Parameters
+        ----------
+        block
+            Block to set
+        int x, y, z
+            Coordinates
+
+        Raises
+        ------
+        OutOfBoundCoordinates
+            If coordinates are not in range of 0-15
+        """
         if not self.inside(x, y, z):
             raise OutOfBoundsCoordinates('X Y and Z must be in range of 0-15')
         index = y * 256 + z * 16 + x
@@ -43,8 +74,12 @@ class EmptySection:
 
     def get_block(self, x: int, y: int, z: int) -> Block:
         """
-        Gets the block at given coordinates
-        Will return the air block if its None internally
+        Gets the block at given coordinates.
+        
+        Parameters
+        ----------
+        int x, y, z
+            Coordinates
         """
         if not self.inside(x, y, z):
             raise OutOfBoundsCoordinates('X Y and Z must be in range of 0-15')
@@ -54,8 +89,8 @@ class EmptySection:
     def palette(self) -> Tuple[Block]:
         """
         Generates and returns a tuple of all the different blocks in the section
-        The order can change a lot as it uses sets, but should be fine as when saving
-        it calls this once
+        The order can change as it uses sets, but should be fine when saving since
+        it's only called once.
         """
         palette = set(self.blocks)
         if None in palette:
@@ -68,6 +103,11 @@ class EmptySection:
         Returns a list of each block's index in the palette.
         
         This is used in the BlockStates tag of the section.
+
+        Parameters
+        ----------
+        palette
+            Section's palette. If not given will generate one.
         """
         palette = palette or self.palette()
         bits = max((len(palette) - 1).bit_length(), 4)
@@ -94,7 +134,7 @@ class EmptySection:
 
     def save(self) -> nbt.TAG_Compound:
         """
-        Saves the section to an TAG_Compound and is used inside the chunk tag
+        Saves the section to a TAG_Compound and is used inside the chunk tag
         This is missing the SkyLight tag, but minecraft still accepts it anyway
         """
         root = nbt.TAG_Compound()

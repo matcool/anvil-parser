@@ -15,9 +15,14 @@ def from_inclusive(a, b):
 
 class EmptyRegion:
     """
-    Class used for making own regions
-    Cannot yet be interchanged with the regular `Region` class,
-    as it is currently only used when reading mca files
+    Used for making own regions
+    
+    Attributes
+    ----------
+    chunks: List[:class:`anvil.EmptyChunk`]
+        List of chunks in this region
+    x: :class:`int`
+    z: :class:`int`
     """
     __slots__ = ('chunks', 'x', 'z')
     def __init__(self, x: int, z: int):
@@ -27,28 +32,74 @@ class EmptyRegion:
         self.z = z
 
     def inside(self, x: int, y: int, z: int, chunk: bool=False) -> bool:
-        """Returns if the given coordinates (global or chunk) are inside this region"""
+        """
+        Returns if the given coordinates are inside this region
+        
+        Parameters
+        ----------
+        int x, y, z
+            Coordinates
+        chunk
+            Whether coordinates are global or chunk coordinates
+        """
         factor = 32 if chunk else 512
         rx = x // factor
         rz = z // factor
         return not (rx != self.x or rz != self.z or y < 0 or y > 255)
 
     def get_chunk(self, x: int, z: int) -> EmptyChunk:
-        """Returns the chunk at given chunk coordinates"""
+        """
+        Returns the chunk at given chunk coordinates
+        
+        Parameters
+        ----------
+        int x, z
+            Chunk's coordinates
+
+
+        :rtype: :class:`anvil.EmptyChunk`
+        """
         if not self.inside(x, 0, z, chunk=True):
             raise OutOfBoundsCoordinates('Given chunk coordinates do not belong in this region')
         return self.chunks[z % 32 * 32 + x % 32]
 
     def add_chunk(self, chunk: EmptyChunk):
         """
-        Adds given chunk to this region
+        Adds given chunk to this region.
         Will overwrite if a chunk already exists in this location
+
+        Parameters
+        ----------
+        chunk: :class:`EmptyChunk`
+        
+        Raises
+        ------
+        ValueError
+            If chunk is not inside this region
         """
         if not self.inside(chunk.x, 0, chunk.z, chunk=True):
             raise ValueError('Chunk does not belong in this region')
         self.chunks[chunk.z % 32 * 32 + chunk.x % 32] = chunk
 
     def add_section(self, section: EmptySection, x: int, z: int, replace: bool=True):
+        """
+        Adds section to chunk at (x, z).
+        Same as ``EmptyChunk.add_section(section)``
+
+        Parameters
+        ----------
+        section: :class:`EmptySection`
+            Section to add
+        int x, z
+            Chunk's coordinate
+        replace
+            Whether to replace section if it already exists in the chunk
+        
+        Raises
+        ------
+        ValueError
+            If chunk isn't inside this region
+        """
         if not self.inside(x, 0, z, chunk=True):
             raise ValueError('Section does not belong in this region')
         chunk = self.chunks[z % 32 * 32 + x % 32]
@@ -59,8 +110,20 @@ class EmptyRegion:
 
     def set_block(self, block: Block, x: int, y: int, z: int):
         """
-        Sets block at given coordinates, them being global
-        will make a new chunk if chunk at coords does not exist
+        Sets block at given coordinates.
+        New chunk is made if it doesn't exist.
+
+        Parameters
+        ----------
+        block: :class:`Block`
+            Block to place
+        int x, y, z
+            Coordinates
+
+        Raises
+        ------
+        OutOfBoundsCoordinates
+            If coordinates aren't inside this region
         """
         if not self.inside(x, y, z):
             raise OutOfBoundsCoordinates('Given coordinates do not belong in this region')
@@ -73,12 +136,41 @@ class EmptyRegion:
         chunk.set_block(block, x % 16, y, z % 16)
 
     def set_if_inside(self, block: Block, x: int, y: int, z: int):
-        """Helper function that only sets the block if self.inside(x, y, z) is True"""
+        """
+        Helper function that only sets
+        the block if ``self.inside(x, y, z)`` is true
+        
+        Parameters
+        ----------
+        block: :class:`Block`
+            Block to place
+        int x, y, z
+            Coordinates
+        """
         if self.inside(x, y, z):
             self.set_block(block, x, y, z)
 
     def fill(self, block: Block, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, ignore_outside: bool=False):
-        """Fills in blocks from (x1,y1,z1) to (x2,y2,z2)"""
+        """
+        Fills in blocks from
+        ``(x1, y1, z1)`` to ``(x2, y2, z2)``
+        in a rectangle.
+
+        Parameters
+        ----------
+        block: :class:`Block`
+        int x1, y1, z1
+            Coordinates
+        int x2, y2, z2
+            Coordinates
+        ignore_outside
+            Whether to ignore if coordinates are outside the region
+
+        Raises
+        ------
+        OutOfBoundsCoordinates
+            If any of the coordinates are outside the region
+        """
         if not ignore_outside:
             if not self.inside(x1, y1, z1):
                 raise OutOfBoundsCoordinates('First coordinates do not belong in this region')
@@ -95,8 +187,15 @@ class EmptyRegion:
 
     def save(self, file: Union[str, BinaryIO]=None) -> bytes:
         """
-        Returns the region as bytes with the anvil file format structure
-        If a file path or object is given, will save there
+        Returns the region as bytes with
+        the anvil file format structure,
+        aka the final ``.mca`` file.
+
+        Parameters
+        ----------
+        file
+            Either a path or a file object, if given region
+            will be saved there.
         """
         # Store all the chunks data as zlib compressed nbt data
         chunks_data = []

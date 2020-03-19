@@ -194,10 +194,16 @@ div.sphinxsidebarwrapper:hover {
 /* My changes */
 
 div.document {
-    width: 1200px;  
+    width: 1000px;
+    min-width: 500px;
+    max-width: 1200px;
 }
 
 div.body {
+    width: 800px;
+    min-width: 500px;
+    max-width: 1000px;
+
     padding-top: 10px;
     padding-bottom: 10px;
 }
@@ -230,4 +236,8 @@ li > a.reference.internal {
 
 li > a.reference.internal:hover {
     text-decoration: underline;
+}
+
+code.xref.py.docutils.literal.notranslate {
+    background: transparent;
 }

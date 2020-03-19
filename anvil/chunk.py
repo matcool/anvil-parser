@@ -18,6 +18,7 @@ class Chunk:
     Represents a chunk from a ``.mca`` file.
 
     Note that this is read only.
+
     Attributes
     ----------
     x: :class:`int`
@@ -160,15 +161,22 @@ class Chunk:
 
     def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
         """
-        oaoaoa
+        Returns a generator for all the blocks in given section
+
+        Parameters
+        ----------
+        index
+            At what block to start from.
+
+            To get an index from (x, y, z), simply do:
+
+            ``y * 256 + z * 16 + x``
+        section
+            Either a Y index or a section NBT tag.
 
         Yields
         ------
-        anvil.Block
-            Yeah
-
-
-        :rtype:
+        :class:`anvil.Block`
         """
         if isinstance(section, int) and (section < 0 or section > 16):
             raise OutOfBoundsCoordinates()
@@ -222,7 +230,11 @@ class Chunk:
     def from_region(cls, region: Union[str, Region], chunkX: int, chunkZ: int):
         """
         Creates a new chunk from region and the chunk's X and Z
-        region can either be the name of the region file, or a Region object
+
+        Parameters
+        ----------
+        region
+            Either a :class:`anvil.Region` or a region file name (like ``r.0.0.mca``)
         """
         if isinstance(region, str):
             region = Region.from_file(region)
