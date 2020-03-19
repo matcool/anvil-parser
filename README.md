@@ -52,6 +52,7 @@ region.save('r.0.0.mca')
 *things to do before 1.0.0*
 - [x] Proper documentation
 - [ ] Biomes
+- [x] CI
 - [ ] More tests
 # Note
 Testing done in 1.14.4 and 1.15.2, should work fine for other versions.
