@@ -6,6 +6,10 @@ just has a few tweaks so it works on alabaster
 body {
     font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu;
     font-size: 1.0em;
+
+    /* Scrolling: Firefox */
+    scrollbar-width: 10px;
+    scrollbar-color: #2C2F33 #23272A; /* Thumb Track */
 }
 
 h1, h2 {
@@ -155,12 +159,6 @@ div.sphinxsidebar #searchbox input[type="submit"] {
 
 dl.describe > dt, dl.function > dt, dl.attribute > dt, dl.classmethod > dt, dl.method > dt, dl.class > dt, dl.exception > dt {
     padding: 2px 10px;
-}
-
-/* Scrolling: Firefox */
-body {
-    scrollbar-width: 10px;
-    scrollbar-color: #2C2F33 #23272A; /* Thumb Track */
 }
 
 /* Scrolling: Chrome etc */
