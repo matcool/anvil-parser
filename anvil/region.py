@@ -1,9 +1,13 @@
-from __future__ import annotations
 from typing import Tuple, Union, BinaryIO
 from nbt import nbt
 import zlib
 from io import BytesIO
 import anvil
+
+MYPY = False
+if MYPY:
+    from .chunk import Chunk
+
 
 class Region:
     """
