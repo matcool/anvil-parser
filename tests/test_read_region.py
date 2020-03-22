@@ -1,15 +1,10 @@
 import context as _
-
+from anvil import Region
 import io
 import secrets
 
-import pytest
-
-from anvil import Region
-
-
 def test_from_filename(tmp_path):
-    filename = tmp_path / "r.?.?.mca"
+    filename = tmp_path / "region.mca"
     contents = secrets.token_bytes()
 
     with open(filename, 'wb') as f:
@@ -17,7 +12,6 @@ def test_from_filename(tmp_path):
 
     region = Region.from_file(str(filename))
     assert region.data == contents
-
 
 def test_from_filelike():
     contents = secrets.token_bytes()
