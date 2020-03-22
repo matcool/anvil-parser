@@ -4,10 +4,6 @@ import zlib
 from io import BytesIO
 import anvil
 
-MYPY = False
-if MYPY:
-    from .chunk import Chunk
-
 class Region:
     """
     Read-only region
@@ -78,7 +74,7 @@ class Region:
         compressed_data = self.data[off + 5 : off + 5 + length - 1]
         return nbt.NBTFile(buffer=BytesIO(zlib.decompress(compressed_data)))
 
-    def get_chunk(self, chunk_x: int, chunk_z: int) -> 'Chunk':
+    def get_chunk(self, chunk_x: int, chunk_z: int) -> 'anvil.Chunk':
         """
         Returns the chunk at given coordinates,
         same as doing ``Chunk.from_region(region, chunk_x, chunk_z)``
@@ -96,7 +92,7 @@ class Region:
         return anvil.Chunk.from_region(self, chunk_x, chunk_z)
 
     @classmethod
-    def from_file(cls, file: Union[str, BinaryIO]) -> 'Region':
+    def from_file(cls, file: Union[str, BinaryIO]):
         """
         Creates a new region with the data from reading the given file
 
