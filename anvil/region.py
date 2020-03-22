@@ -8,7 +8,6 @@ MYPY = False
 if MYPY:
     from .chunk import Chunk
 
-
 class Region:
     """
     Read-only region
