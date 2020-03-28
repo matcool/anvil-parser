@@ -55,7 +55,13 @@ class Chunk:
         """
         if y < 0 or y > 15:
             raise ValueError('Y index must be in the range of 0 to 15')
-        for section in self.data['Sections']:
+
+        try:
+            sections = self.data["Sections"]
+        except KeyError:
+            return None
+
+        for section in sections:
             if section['Y'].value == y:
                 return section
 
