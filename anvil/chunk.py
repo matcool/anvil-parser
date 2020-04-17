@@ -116,8 +116,7 @@ class Chunk:
 
         # If its an empty section its most likely an air block 
         if section is None or section.get('BlockStates') is None:
-            for i in range(4096):
-                yield Block.from_name("minecraft:air")
+            return Block.from_name('minecraft:air')
 
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
@@ -194,7 +193,9 @@ class Chunk:
             section = self.get_section(section or 0)
 
         if section is None or section.get('BlockStates') is None:
-            return Block.from_name('minecraft:air')
+            air = Block.from_name('minecraft:air')
+            for i in range(4096):
+                yield air
 
         states = section['BlockStates'].value
         palette = section['Palette']
