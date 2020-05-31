@@ -134,7 +134,7 @@ class Chunk:
         states = section['BlockStates'].value
 
         # get location in the BlockStates array via the index
-        if self.version >= _Version_20w_17a:
+        if self.version.value >= _Version_20w_17a:
             state = index // (64 // bits)
         else:
             state = index * bits // 64
@@ -146,7 +146,7 @@ class Chunk:
         if data < 0:
             data += 2**64
 
-        if self.version >= _Version_20w_17a:
+        if self.version.value >= _Version_20w_17a:
             shifted_data = data >> (index % (64 // bits))
         else:
             # shift the number to the right to remove the left over bits
@@ -216,7 +216,7 @@ class Chunk:
 
         bits = max((len(palette) - 1).bit_length(), 4)
 
-        if self.version >= _Version_20w_17a:
+        if self.version.value >= _Version_20w_17a:
             state = index // (64 // bits)
         else:
             state = index * bits // 64
@@ -227,7 +227,7 @@ class Chunk:
 
         bits_mask = 2**bits - 1
 
-        if self.version >= _Version_20w_17a:
+        if self.version.value >= _Version_20w_17a:
             offset = data >> (index % (64 // bits))
         else:
             offset = data >> ((bits * index) % 64)
