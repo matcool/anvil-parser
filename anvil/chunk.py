@@ -5,6 +5,10 @@ from .region import Region
 from .errors import OutOfBoundsCoordinates
 import math
 
+
+# The version that removes block state value stretching from the storage
+_Version_20w_17a = 2529
+
 def bin_append(a, b, length=None):
     """
     Appends number a to the left of b
@@ -128,9 +132,12 @@ class Chunk:
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
         states = section['BlockStates'].value
-        
+
         # get location in the BlockStates array via the index
-        state = index * bits // 64
+        if self.version >= _Version_20w_17a:
+            state = index // (64 // bits)
+        else:
+            state = index * bits // 64
 
         # makes sure the number is unsigned
         # by adding 2^64
@@ -139,24 +146,31 @@ class Chunk:
         if data < 0:
             data += 2**64
 
-        # shift the number to the right to remove the left over bits
-        # and shift so the i'th block is the first one
-        shifted_data = data >> ((bits * index) % 64)
+        if self.version >= _Version_20w_17a:
+            shifted_data = data >> (index % (64 // bits))
+        else:
+            # shift the number to the right to remove the left over bits
+            # and shift so the i'th block is the first one
+            shifted_data = data >> ((bits * index) % 64)
 
-        # if there arent enough bits it means the rest are in the next number
+        # if there aren't enough bits it means the rest are in the next number
         if 64 - ((bits * index) % 64) < bits:
             data = states[state + 1]
             if data < 0:
                 data += 2**64
-            # get how many bits are from a palette index of the next block
-            leftover = (bits - ((state + 1) * 64 % bits)) % bits
 
-            # Make sure to keep the length of the bits in the first state
-            # Example: bits is 5, and leftover is 3
-            # Next state                Current state (already shifted)
-            # 0b101010110101101010010   0b01
-            # will result in bin_append(0b010, 0b01, 2) = 0b01001
-            shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
+            if self.version.value >= _Version_20w_17a:
+                shifted_data = data
+            else:
+                # get how many bits are from a palette index of the next block
+                leftover = (bits - ((state + 1) * 64 % bits)) % bits
+
+                # Make sure to keep the length of the bits in the first state
+                # Example: bits is 5, and leftover is 3
+                # Next state                Current state (already shifted)
+                # 0b101010110101101010010   0b01
+                # will result in bin_append(0b010, 0b01, 2) = 0b01001
+                shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
         
         # get `bits` least significant bits
         # which are the palette index
@@ -202,7 +216,10 @@ class Chunk:
 
         bits = max((len(palette) - 1).bit_length(), 4)
 
-        state = index * bits // 64
+        if self.version >= _Version_20w_17a:
+            state = index // (64 // bits)
+        else:
+            state = index * bits // 64
 
         data = states[state]
         if data < 0:
@@ -210,7 +227,10 @@ class Chunk:
 
         bits_mask = 2**bits - 1
 
-        offset = (bits * index) % 64
+        if self.version >= _Version_20w_17a:
+            offset = data >> (index % (64 // bits))
+        else:
+            offset = data >> ((bits * index) % 64)
 
         data_len = 64 - offset
         data >>= offset
@@ -222,10 +242,13 @@ class Chunk:
                 if new_data < 0:
                     new_data += 2**64
 
-                leftover = data_len
-                data_len += 64
+                if self.version.value >= _Version_20w_17a:
+                    data = new_data
+                else:
+                    leftover = data_len
+                    data_len += 64
 
-                data = bin_append(new_data, data, leftover)
+                    data = bin_append(new_data, data, leftover)
 
             palette_id = data & bits_mask
             yield Block.from_palette(palette[palette_id])
