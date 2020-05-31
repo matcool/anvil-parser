@@ -244,6 +244,7 @@ class Chunk:
 
                 if self.version.value >= _Version_20w_17a:
                     data = new_data
+                    data_len = 64
                 else:
                     leftover = data_len
                     data_len += 64
