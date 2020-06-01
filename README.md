@@ -54,5 +54,6 @@ region.save('r.0.0.mca')
 - [ ] Biomes
 - [x] CI
 - [ ] More tests
+  - [ ] Tests for 20w17a+ BlockStates format
 # Note
 Testing done in 1.14.4 and 1.15.2, should work fine for other versions.
