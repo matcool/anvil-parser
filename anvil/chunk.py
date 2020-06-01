@@ -5,6 +5,11 @@ from .region import Region
 from .errors import OutOfBoundsCoordinates
 import math
 
+
+# This version removes block state value stretching from the storage
+# so a block value isn't in multiple elements of the array
+_VERSION_20w17a = 2529
+
 def bin_append(a, b, length=None):
     """
     Appends number a to the left of b
@@ -33,10 +38,10 @@ class Chunk:
     __slots__ = ('version', 'data', 'x', 'z')
 
     def __init__(self, nbt_data: nbt.NBTFile):
-        self.version = nbt_data['DataVersion']
+        self.version = nbt_data['DataVersion'].value
         self.data = nbt_data['Level']
-        self.x = self.data['xPos']
-        self.z = self.data['zPos']
+        self.x = self.data['xPos'].value
+        self.z = self.data['zPos'].value
         
     def get_section(self, y: int) -> nbt.TAG_Compound:
         """
@@ -128,9 +133,16 @@ class Chunk:
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
         states = section['BlockStates'].value
-        
+
+        # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
+        stretches = self.version < _VERSION_20w17a
+        # stretches = True
+
         # get location in the BlockStates array via the index
-        state = index * bits // 64
+        if stretches:
+            state = index * bits // 64
+        else:
+            state = index // (64 // bits)
 
         # makes sure the number is unsigned
         # by adding 2^64
@@ -139,24 +151,28 @@ class Chunk:
         if data < 0:
             data += 2**64
 
-        # shift the number to the right to remove the left over bits
-        # and shift so the i'th block is the first one
-        shifted_data = data >> ((bits * index) % 64)
+        if stretches:
+            # shift the number to the right to remove the left over bits
+            # and shift so the i'th block is the first one
+            shifted_data = data >> ((bits * index) % 64)
+        else:
+            shifted_data = data >> (index % (64 // bits) * bits)
 
-        # if there arent enough bits it means the rest are in the next number
-        if 64 - ((bits * index) % 64) < bits:
+        # if there aren't enough bits it means the rest are in the next number
+        if stretches and 64 - ((bits * index) % 64) < bits:
             data = states[state + 1]
             if data < 0:
                 data += 2**64
-            # get how many bits are from a palette index of the next block
-            leftover = (bits - ((state + 1) * 64 % bits)) % bits
 
-            # Make sure to keep the length of the bits in the first state
-            # Example: bits is 5, and leftover is 3
-            # Next state                Current state (already shifted)
-            # 0b101010110101101010010   0b01
-            # will result in bin_append(0b010, 0b01, 2) = 0b01001
-            shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
+                # get how many bits are from a palette index of the next block
+                leftover = (bits - ((state + 1) * 64 % bits)) % bits
+
+                # Make sure to keep the length of the bits in the first state
+                # Example: bits is 5, and leftover is 3
+                # Next state                Current state (already shifted)
+                # 0b101010110101101010010   0b01
+                # will result in bin_append(0b010, 0b01, 2) = 0b01001
+                shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
         
         # get `bits` least significant bits
         # which are the palette index
@@ -202,7 +218,12 @@ class Chunk:
 
         bits = max((len(palette) - 1).bit_length(), 4)
 
-        state = index * bits // 64
+        stretches = self.version < _VERSION_20w17a
+
+        if stretches:
+            state = index * bits // 64
+        else:
+            state = index // (64 // bits)
 
         data = states[state]
         if data < 0:
@@ -210,7 +231,10 @@ class Chunk:
 
         bits_mask = 2**bits - 1
 
-        offset = (bits * index) % 64
+        if stretches:
+            offset = (bits * index) % 64
+        else:
+            offset = index % (64 // bits) * bits
 
         data_len = 64 - offset
         data >>= offset
@@ -222,10 +246,14 @@ class Chunk:
                 if new_data < 0:
                     new_data += 2**64
 
-                leftover = data_len
-                data_len += 64
+                if stretches:
+                    leftover = data_len
+                    data_len += 64
 
-                data = bin_append(new_data, data, leftover)
+                    data = bin_append(new_data, data, leftover)
+                else:
+                    data = new_data
+                    data_len = 64
 
             palette_id = data & bits_mask
             yield Block.from_palette(palette[palette_id])
