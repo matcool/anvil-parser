@@ -164,15 +164,15 @@ class Chunk:
             if data < 0:
                 data += 2**64
 
-                # get how many bits are from a palette index of the next block
-                leftover = (bits - ((state + 1) * 64 % bits)) % bits
+            # get how many bits are from a palette index of the next block
+            leftover = (bits - ((state + 1) * 64 % bits)) % bits
 
-                # Make sure to keep the length of the bits in the first state
-                # Example: bits is 5, and leftover is 3
-                # Next state                Current state (already shifted)
-                # 0b101010110101101010010   0b01
-                # will result in bin_append(0b010, 0b01, 2) = 0b01001
-                shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
+            # Make sure to keep the length of the bits in the first state
+            # Example: bits is 5, and leftover is 3
+            # Next state                Current state (already shifted)
+            # 0b101010110101101010010   0b01
+            # will result in bin_append(0b010, 0b01, 2) = 0b01001
+            shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
         
         # get `bits` least significant bits
         # which are the palette index
