@@ -1,5 +1,6 @@
 from typing import Union, List, BinaryIO
 from .empty_chunk import EmptyChunk
+from .chunk import Chunk
 from .empty_section import EmptySection
 from .block import Block
 from .errors import OutOfBoundsCoordinates
@@ -204,7 +205,13 @@ class EmptyRegion:
                 chunks_data.append(None)
                 continue
             chunk_data = BytesIO()
-            chunk.save().write_file(buffer=chunk_data)
+            if isinstance(chunk, Chunk):
+                nbt_data = nbt.NBTFile()
+                nbt_data.tags.append(nbt.TAG_Int(name='DataVersion', value=chunk.version))
+                nbt_data.tags.append(chunk.data)
+            else:
+                nbt_data = chunk.save()
+            nbt_data.write_file(buffer=chunk_data)
             chunk_data.seek(0)
             chunk_data = zlib.compress(chunk_data.read())
             chunks_data.append(chunk_data)
