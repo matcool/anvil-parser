@@ -262,6 +262,20 @@ class Chunk:
             index += 1
             data >>= bits
             data_len -= bits
+
+    def stream_chunk(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
+        """
+        Returns a generator for all the blocks in the chunk
+
+        This is a helper function that runs Chunk.stream_blocks from section 0 to 15
+
+        Yields
+        ------
+        :class:`anvil.Block`
+        """
+        for section in range(16):
+            for block in self.stream_blocks(section=section):
+                yield block
         
     @classmethod
     def from_region(cls, region: Union[str, Region], chunkX: int, chunkZ: int):
