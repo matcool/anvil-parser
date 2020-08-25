@@ -234,6 +234,25 @@ class Chunk:
         if section is None or isinstance(section, int):
             section = self.get_section(section or 0)
 
+        if self.version < _VERSION_17w47a:
+            if section is None or 'Blocks' not in section:
+                air = OldBlock(0)
+                for i in range(4096):
+                    yield air
+                return
+            
+            while index < 4096:
+                block_id = section['Blocks'][index]
+                if 'Add' in section:
+                    block_id += nibble(section['Add'], index) << 8
+
+                block_data = nibble(section['Data'], index)
+                
+                yield OldBlock(block_id, block_data)
+
+                index += 1
+            return
+
         if section is None or 'BlockStates' not in section:
             air = Block.from_name('minecraft:air')
             for i in range(4096):
