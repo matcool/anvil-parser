@@ -1,6 +1,6 @@
 from nbt import nbt
 from frozendict import frozendict
-from .legacy import legacy_id_map
+from .legacy import LEGACY_ID_MAP
 
 class Block:
     """
@@ -85,7 +85,7 @@ class Block:
         return cls.from_name(name, properties=properties)
 
     @classmethod
-    def from_NumId(cls, block_id: int, data: int=0):
+    def from_numeric_id(cls, block_id: int, data: int=0):
         """
         Creates a new Block from the block_id:data fromat used pre-flattening (pre-1.13)
 
@@ -93,14 +93,15 @@ class Block:
         ----------
         block_id
             Numeric ID of the block
-        ,data
+        data
             Numeric data, used to represent variants of the block
         """
         # See https://minecraft.gamepedia.com/Java_Edition_data_value/Pre-flattening
         # and https://minecraft.gamepedia.com/Java_Edition_data_value for current values
-        name, properties = legacy_id_map[f'{block_id}:{data}']
-        if properties:
-            properties = {k: nbt.TAG_String(v, k) for k, v in properties.items()}
+        key = f'{block_id}:{data}'
+        if key not in LEGACY_ID_MAP:
+            raise KeyError(f'Block {key} not found')
+        name, properties = LEGACY_ID_MAP[key]
         return cls('minecraft', name, properties=properties)
 
 class OldBlock:
@@ -127,6 +128,9 @@ class OldBlock:
         """
         self.id = block_id
         self.data = data
+
+    def convert(self) -> Block:
+        return Block.from_numeric_id(self.id, self.data)
 
     def __repr__(self):
         return f'OldBlock(id={self.id}, data={self.data})'

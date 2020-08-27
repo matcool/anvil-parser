@@ -99,7 +99,7 @@ class Chunk:
             return
         return tuple(Block.from_palette(i) for i in section['Palette'])
 
-    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None, forceNew: bool=False) -> Union[Block, OldBlock]:
+    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None, force_new: bool=False) -> Union[Block, OldBlock]:
         """
         Returns the block in the given coordinates
 
@@ -110,7 +110,7 @@ class Chunk:
         section : int
             Either a section NBT tag or an index. If no section is given,
             assume Y is global and use it for getting the section.
-        forceNew : bool
+        force_new
             Always returns an instance of Block if True, otherwise returns type OldBlock for pre-1.13 versions.
             Defaults to False
         Raises
@@ -136,7 +136,10 @@ class Chunk:
             # Explained in depth here https://minecraft.gamepedia.com/index.php?title=Chunk_format&oldid=1153403#Block_format
 
             if section is None or 'Blocks' not in section:
-                return Block.from_NumId(0) if forceNew else OldBlock(0)
+                if force_new:
+                    return Block.from_name('minecraft:air')
+                else:
+                    return OldBlock(0)
 
             index = y * 16 * 16 + z * 16 + x
 
@@ -146,7 +149,11 @@ class Chunk:
 
             block_data = nibble(section['Data'], index)
 
-            return Block.from_NumId(block_id, block_data) if forceNew else OldBlock(block_id, block_data)
+            block = OldBlock(block_id, block_data)
+            if force_new:
+                return block.convert()
+            else:
+                return block
 
         # If its an empty section its most likely an air block
         if section is None or 'BlockStates' not in section:
@@ -210,7 +217,7 @@ class Chunk:
         block = section['Palette'][palette_id]
         return Block.from_palette(block)
 
-    def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None, forceNew: bool=False) -> Generator[Block, None, None]:
+    def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None, force_new: bool=False) -> Generator[Block, None, None]:
         """
         Returns a generator for all the blocks in given section
 
@@ -224,7 +231,7 @@ class Chunk:
             ``y * 256 + z * 16 + x``
         section
             Either a Y index or a section NBT tag.
-        forceNew : bool
+        force_new
             Always returns an instance of Block if True, otherwise returns type OldBlock for pre-1.13 versions.
             Defaults to False
 
@@ -242,7 +249,7 @@ class Chunk:
 
         if self.version < _VERSION_17w47a:
             if section is None or 'Blocks' not in section:
-                air = Block.from_NumId(0) if forceNew else OldBlock(0)
+                air = Block.from_name('minecraft:air') if force_new else OldBlock(0)
                 for i in range(4096):
                     yield air
                 return
@@ -254,7 +261,11 @@ class Chunk:
 
                 block_data = nibble(section['Data'], index)
 
-                yield Block.from_NumId(block_id, block_data) if forceNew else OldBlock(block_id, block_data)
+                block = OldBlock(block_id, block_data)
+                if force_new:
+                    yield block.convert()
+                else:
+                    yield block
 
                 index += 1
             return
