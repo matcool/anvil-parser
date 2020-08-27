@@ -42,7 +42,7 @@ class Block:
         return self.namespace + ':' + self.id
 
     def __repr__(self):
-        return f'<Block({self.name()})>'
+        return f'Block({self.name()})'
 
     def __eq__(self, other):
         if not isinstance(other, Block):
@@ -82,3 +82,42 @@ class Block:
         if properties:
             properties = dict(properties)
         return cls.from_name(name, properties=properties)
+
+class OldBlock:
+    """
+    Represents a pre 1.13 minecraft block, with a numeric id.
+
+    Attributes
+    ----------
+    id: :class:`int`
+        Numeric ID of the block
+    data: :class:`int`
+        The block data, used to represent variants of the block
+    """
+    __slots__ = ('id', 'data')
+
+    def __init__(self, block_id: int, data: int=0):
+        """
+        Parameters
+        ----------
+        block_id
+            ID of the block
+        data
+            Block data
+        """
+        self.id = block_id
+        self.data = data
+
+    def __repr__(self):
+        return f'OldBlock(id={self.id}, data={self.data})'
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self.id == other
+        elif not isinstance(other, Block):
+            return False
+        else:
+            return self.id == other.id and self.data == other.data
+
+    def __hash__(self):
+        return hash(self.id) ^ hash(self.data)

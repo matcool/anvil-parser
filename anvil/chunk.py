@@ -1,6 +1,6 @@
 from typing import Union, Tuple, Generator
 from nbt import nbt
-from .block import Block
+from .block import Block, OldBlock
 from .region import Region
 from .errors import OutOfBoundsCoordinates
 import math
@@ -10,6 +10,10 @@ import math
 # so a block value isn't in multiple elements of the array
 _VERSION_20w17a = 2529
 
+# This is the version where "The Flattening" (https://minecraft.gamepedia.com/Java_Edition_1.13/Flattening) happened
+# where blocks went from numeric ids to namespaced ids (namespace:block_id)
+_VERSION_17w47a = 1451
+
 def bin_append(a, b, length=None):
     """
     Appends number a to the left of b
@@ -17,6 +21,13 @@ def bin_append(a, b, length=None):
     """
     length = length or b.bit_length()
     return (a << length) | b
+
+def nibble(byte_array, index):
+    value = byte_array[index // 2]
+    if index % 2:
+        return value >> 4
+    else:
+        return value & 0b1111
 
 class Chunk:
     """
@@ -88,7 +99,7 @@ class Chunk:
             return
         return tuple(Block.from_palette(i) for i in section['Palette'])
 
-    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None) -> Block:
+    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None) -> Union[Block, OldBlock]:
         """
         Returns the block in the given coordinates
 
@@ -118,6 +129,21 @@ class Chunk:
             section = self.get_section(y // 16)
             # global Y to section Y
             y %= 16
+
+        if self.version < _VERSION_17w47a:
+            # Explained in depth here https://minecraft.gamepedia.com/index.php?title=Chunk_format&oldid=1153403#Block_format
+            if section is None or 'Blocks' not in section:
+                return OldBlock(0)
+            
+            index = y * 16 * 16 + z * 16 + x
+
+            block_id = section['Blocks'][index]
+            if 'Add' in section:
+                block_id += nibble(section['Add'], index) << 8
+
+            block_data = nibble(section['Data'], index)
+            
+            return OldBlock(block_id, block_data)
 
         # If its an empty section its most likely an air block 
         if section is None or 'BlockStates' not in section:
@@ -207,6 +233,25 @@ class Chunk:
 
         if section is None or isinstance(section, int):
             section = self.get_section(section or 0)
+
+        if self.version < _VERSION_17w47a:
+            if section is None or 'Blocks' not in section:
+                air = OldBlock(0)
+                for i in range(4096):
+                    yield air
+                return
+            
+            while index < 4096:
+                block_id = section['Blocks'][index]
+                if 'Add' in section:
+                    block_id += nibble(section['Add'], index) << 8
+
+                block_data = nibble(section['Data'], index)
+                
+                yield OldBlock(block_id, block_data)
+
+                index += 1
+            return
 
         if section is None or 'BlockStates' not in section:
             air = Block.from_name('minecraft:air')
