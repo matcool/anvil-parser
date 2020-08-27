@@ -1,5 +1,5 @@
 from .chunk import Chunk
-from .block import Block
+from .block import Block, OldBlock
 from .region import Region
 from .empty_region import EmptyRegion
 from .empty_chunk import EmptyChunk
