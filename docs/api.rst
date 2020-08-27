@@ -8,6 +8,11 @@ Block
 
    .. automethod:: __init__
 
+.. autoclass:: anvil.OldBlock
+   :members:
+
+   .. automethod:: __init__
+
 Region
 ------
 .. autoclass:: anvil.Region
