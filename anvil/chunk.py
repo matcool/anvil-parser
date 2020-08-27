@@ -53,7 +53,7 @@ class Chunk:
         self.data = nbt_data['Level']
         self.x = self.data['xPos'].value
         self.z = self.data['zPos'].value
-        
+
     def get_section(self, y: int) -> nbt.TAG_Compound:
         """
         Returns the section at given y index
@@ -99,7 +99,7 @@ class Chunk:
             return
         return tuple(Block.from_palette(i) for i in section['Palette'])
 
-    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None) -> Union[Block, OldBlock]:
+    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None, forceNew: bool=False) -> Union[Block, OldBlock]:
         """
         Returns the block in the given coordinates
 
@@ -110,21 +110,23 @@ class Chunk:
         section : int
             Either a section NBT tag or an index. If no section is given,
             assume Y is global and use it for getting the section.
-
+        forceNew : bool
+            Always returns an instance of Block if True, otherwise returns type OldBlock for pre-1.13 versions.
+            Defaults to False
         Raises
         ------
         ValueError
             If X or Z aren't in the range of 0 to 15,
             or if Y isn't in the range of 0 to 255
 
-        
+
         :rtype: :class:`anvil.Block`
         """
         if x < 0 or x > 15 or z < 0 or z > 15:
             raise ValueError('X and Z must be in the range of 0 to 15')
         if y < 0 or y > 255:
             raise ValueError('Y must be in the range of 0 to 255')
-        
+
         if section is None:
             section = self.get_section(y // 16)
             # global Y to section Y
@@ -132,9 +134,10 @@ class Chunk:
 
         if self.version < _VERSION_17w47a:
             # Explained in depth here https://minecraft.gamepedia.com/index.php?title=Chunk_format&oldid=1153403#Block_format
+
             if section is None or 'Blocks' not in section:
-                return OldBlock(0)
-            
+                return Block.from_NumId(0) if forceNew else OldBlock(0)
+
             index = y * 16 * 16 + z * 16 + x
 
             block_id = section['Blocks'][index]
@@ -142,10 +145,10 @@ class Chunk:
                 block_id += nibble(section['Add'], index) << 8
 
             block_data = nibble(section['Data'], index)
-            
-            return OldBlock(block_id, block_data)
 
-        # If its an empty section its most likely an air block 
+            return Block.from_NumId(block_id, block_data) if forceNew else OldBlock(block_id, block_data)
+
+        # If its an empty section its most likely an air block
         if section is None or 'BlockStates' not in section:
             return Block.from_name('minecraft:air')
 
@@ -199,7 +202,7 @@ class Chunk:
             # 0b101010110101101010010   0b01
             # will result in bin_append(0b010, 0b01, 2) = 0b01001
             shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
-        
+
         # get `bits` least significant bits
         # which are the palette index
         palette_id = shifted_data & 2**bits - 1
@@ -207,7 +210,7 @@ class Chunk:
         block = section['Palette'][palette_id]
         return Block.from_palette(block)
 
-    def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
+    def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None, forceNew: bool=False) -> Generator[Block, None, None]:
         """
         Returns a generator for all the blocks in given section
 
@@ -221,6 +224,9 @@ class Chunk:
             ``y * 256 + z * 16 + x``
         section
             Either a Y index or a section NBT tag.
+        forceNew : bool
+            Always returns an instance of Block if True, otherwise returns type OldBlock for pre-1.13 versions.
+            Defaults to False
 
         Yields
         ------
@@ -236,19 +242,19 @@ class Chunk:
 
         if self.version < _VERSION_17w47a:
             if section is None or 'Blocks' not in section:
-                air = OldBlock(0)
+                air = Block.from_NumId(0) if forceNew else OldBlock(0)
                 for i in range(4096):
                     yield air
                 return
-            
+
             while index < 4096:
                 block_id = section['Blocks'][index]
                 if 'Add' in section:
                     block_id += nibble(section['Add'], index) << 8
 
                 block_data = nibble(section['Data'], index)
-                
-                yield OldBlock(block_id, block_data)
+
+                yield Block.from_NumId(block_id, block_data) if forceNew else OldBlock(block_id, block_data)
 
                 index += 1
             return
@@ -321,7 +327,7 @@ class Chunk:
         for section in range(16):
             for block in self.stream_blocks(section=section):
                 yield block
-        
+
     @classmethod
     def from_region(cls, region: Union[str, Region], chunkX: int, chunkZ: int):
         """
