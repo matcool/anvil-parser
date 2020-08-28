@@ -5,7 +5,7 @@ with open('README.md', 'r') as file:
 
 setuptools.setup(
     name='anvil-parser',
-    version='0.8.1',
+    version='0.8.2',
     author='mat',
     description='A Minecraft anvil file format parser',
     long_description=long_description,
@@ -20,5 +20,6 @@ setuptools.setup(
     install_requires=[
         'nbt',
         'frozendict',
-    ]
+    ],
+    include_package_data=True
 )
