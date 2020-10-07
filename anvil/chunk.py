@@ -1,4 +1,4 @@
-from typing import Union, Tuple, Generator
+from typing import Union, Tuple, Generator, Optional
 from nbt import nbt
 from .block import Block, OldBlock
 from .region import Region
@@ -45,6 +45,8 @@ class Chunk:
         Version of the chunk NBT structure
     data: :class:`nbt.TAG_Compound`
         Raw NBT data of the chunk
+    tile_entities: :class:`nbt.TAG_Compound`
+        ``self.data['TileEntities']`` as an attribute for easier use
     """
     __slots__ = ('version', 'data', 'x', 'z')
 
@@ -53,6 +55,7 @@ class Chunk:
         self.data = nbt_data['Level']
         self.x = self.data['xPos'].value
         self.z = self.data['zPos'].value
+        self.tile_entities = self.data['TileEntities']
 
     def get_section(self, y: int) -> nbt.TAG_Compound:
         """
@@ -338,6 +341,17 @@ class Chunk:
         for section in range(16):
             for block in self.stream_blocks(section=section):
                 yield block
+
+    def get_tile_entity(self, x: int, y: int, z: int) -> Optional[nbt.TAG_Compound]:
+        """
+        Returns the tile entity at given coordinates, or ``None`` if there isn't a tile entity
+
+        To iterate through all tile entities in the chunk, use :class:`Chunk.tile_entities`
+        """
+        for tile_entity in self.tile_entities:
+            t_x, t_y, t_z = [tile_entity[k].value for k in 'xyz']
+            if x == t_x and y == t_y and z == t_z:
+                return tile_entity
 
     @classmethod
     def from_region(cls, region: Union[str, Region], chunkX: int, chunkZ: int):
