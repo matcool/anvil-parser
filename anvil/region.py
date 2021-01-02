@@ -3,6 +3,7 @@ from nbt import nbt
 import zlib
 from io import BytesIO
 import anvil
+from .errors import GZipChunkData
 
 class Region:
     """
@@ -61,6 +62,11 @@ class Region:
             Chunk's X value
         chunk_z
             Chunk's Z value
+
+        Raises
+        ------
+        anvil.GZipChunkData
+            If the chunk's compression is gzip
         """
         off = self.chunk_location(chunk_x, chunk_z)
         # (0, 0) means it hasn't generated yet, aka it doesn't exist yet
@@ -70,7 +76,7 @@ class Region:
         length = int.from_bytes(self.data[off:off + 4], byteorder='big')
         compression = self.data[off + 4] # 2 most of the time
         if compression == 1:
-            raise Exception('GZip is not supported')
+            raise GZipChunkData('GZip is not supported')
         compressed_data = self.data[off + 5 : off + 5 + length - 1]
         return nbt.NBTFile(buffer=BytesIO(zlib.decompress(compressed_data)))
 

@@ -2,7 +2,7 @@ from typing import Union, Tuple, Generator, Optional
 from nbt import nbt
 from .block import Block, OldBlock
 from .region import Region
-from .errors import OutOfBoundsCoordinates
+from .errors import OutOfBoundsCoordinates, ChunkNotFound
 import math
 
 
@@ -69,11 +69,11 @@ class Chunk:
 
         Raises
         ------
-        ValueError
-            If Y is not in range of 0 and 15
+        anvil.OutOfBoundsCoordinates
+            If Y is not in range of 0 to 15
         """
         if y < 0 or y > 15:
-            raise ValueError('Y index must be in the range of 0 to 15')
+            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 15')
 
         try:
             sections = self.data["Sections"]
@@ -116,19 +116,20 @@ class Chunk:
         force_new
             Always returns an instance of Block if True, otherwise returns type OldBlock for pre-1.13 versions.
             Defaults to False
+
         Raises
         ------
-        ValueError
-            If X or Z aren't in the range of 0 to 15,
-            or if Y isn't in the range of 0 to 255
-
+        anvil.OutOfBoundCoordidnates
+            If X, Y or Z are not in the proper range
 
         :rtype: :class:`anvil.Block`
         """
-        if x < 0 or x > 15 or z < 0 or z > 15:
-            raise ValueError('X and Z must be in the range of 0 to 15')
+        if x < 0 or x > 15:
+            raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
+        if z < 0 or z > 15:
+            raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
         if y < 0 or y > 255:
-            raise ValueError('Y must be in the range of 0 to 255')
+            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
 
         if section is None:
             section = self.get_section(y // 16)
@@ -238,12 +239,17 @@ class Chunk:
             Always returns an instance of Block if True, otherwise returns type OldBlock for pre-1.13 versions.
             Defaults to False
 
+        Raises
+        ------
+        anvil.OutOfBoundCoordidnates
+            If `section` is not in the range of 0 to 15
+
         Yields
         ------
         :class:`anvil.Block`
         """
         if isinstance(section, int) and (section < 0 or section > 16):
-            raise OutOfBoundsCoordinates()
+            raise OutOfBoundsCoordinates(f'section ({section!r}) must be in range of 0 to 15')
 
         # For better understanding of this code, read get_block()'s source
 
@@ -354,7 +360,7 @@ class Chunk:
                 return tile_entity
 
     @classmethod
-    def from_region(cls, region: Union[str, Region], chunkX: int, chunkZ: int):
+    def from_region(cls, region: Union[str, Region], chunk_x: int, chunk_z: int):
         """
         Creates a new chunk from region and the chunk's X and Z
 
@@ -362,10 +368,15 @@ class Chunk:
         ----------
         region
             Either a :class:`anvil.Region` or a region file name (like ``r.0.0.mca``)
+
+        Raises
+        ----------
+        anvil.ChunkNotFound
+            If a chunk is outside this region or hasn't been generated yet
         """
         if isinstance(region, str):
             region = Region.from_file(region)
-        nbt_data = region.chunk_data(chunkX, chunkZ)
+        nbt_data = region.chunk_data(chunk_x, chunk_z)
         if nbt_data is None:
-            raise Exception('Unexistent chunk')
+            raise ChunkNotFound(f'Could not find chunk ({chunk_x}, {chunk_z})')
         return cls(nbt_data)

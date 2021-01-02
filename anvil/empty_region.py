@@ -57,11 +57,15 @@ class EmptyRegion:
         int x, z
             Chunk's coordinates
 
+        Raises
+        ------
+        anvil.OutOfBoundCoordidnates
+            If the chunk (x, z) is not inside this region
 
         :rtype: :class:`anvil.EmptyChunk`
         """
         if not self.inside(x, 0, z, chunk=True):
-            raise OutOfBoundsCoordinates('Given chunk coordinates do not belong in this region')
+            raise OutOfBoundsCoordinates(f'Chunk ({x}, {z}) is not inside this region')
         return self.chunks[z % 32 * 32 + x % 32]
 
     def add_chunk(self, chunk: EmptyChunk):
@@ -75,11 +79,11 @@ class EmptyRegion:
         
         Raises
         ------
-        ValueError
-            If chunk is not inside this region
+        anvil.OutOfBoundCoordidnates
+            If the chunk (x, z) is not inside this region
         """
         if not self.inside(chunk.x, 0, chunk.z, chunk=True):
-            raise ValueError('Chunk does not belong in this region')
+            raise OutOfBoundsCoordinates(f'Chunk ({chunk.x}, {chunk.z}) is not inside this region')
         self.chunks[chunk.z % 32 * 32 + chunk.x % 32] = chunk
 
     def add_section(self, section: EmptySection, x: int, z: int, replace: bool=True):
@@ -98,11 +102,11 @@ class EmptyRegion:
         
         Raises
         ------
-        ValueError
-            If chunk isn't inside this region
+        anvil.OutOfBoundsCoordinates
+            If the chunk (x, z) is not inside this region
         """
         if not self.inside(x, 0, z, chunk=True):
-            raise ValueError('Section does not belong in this region')
+            raise OutOfBoundsCoordinates(f'Chunk ({x}, {z}) is not inside this region')
         chunk = self.chunks[z % 32 * 32 + x % 32]
         if chunk is None:
             chunk = EmptyChunk(x, z)
@@ -123,11 +127,11 @@ class EmptyRegion:
 
         Raises
         ------
-        OutOfBoundsCoordinates
-            If coordinates aren't inside this region
+        anvil.OutOfBoundsCoordinates
+            If the block (x, y, z) is not inside this region
         """
         if not self.inside(x, y, z):
-            raise OutOfBoundsCoordinates('Given coordinates do not belong in this region')
+            raise OutOfBoundsCoordinates(f'Block ({x}, {y}, {z}) is not inside this region')
         cx = x // 16
         cz = z // 16
         chunk = self.get_chunk(cx, cz)
@@ -169,14 +173,14 @@ class EmptyRegion:
 
         Raises
         ------
-        OutOfBoundsCoordinates
+        anvil.OutOfBoundsCoordinates
             If any of the coordinates are outside the region
         """
         if not ignore_outside:
             if not self.inside(x1, y1, z1):
-                raise OutOfBoundsCoordinates('First coordinates do not belong in this region')
+                raise OutOfBoundsCoordinates(f'First coords ({x1}, {y1}, {z1}) is not inside this region')
             if not self.inside(x2, y2, z2):
-                raise OutOfBoundsCoordinates('Second coordinates do not belong in this region')
+                raise OutOfBoundsCoordinates(f'Second coords ({x}, {y}, {z}) is not inside this region')
 
         for y in from_inclusive(y1, y2):
             for z in from_inclusive(z1, z2):

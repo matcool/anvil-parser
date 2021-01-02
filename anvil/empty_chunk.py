@@ -1,7 +1,7 @@
 from typing import List
 from .block import Block
 from .empty_section import EmptySection
-from .errors import OutOfBoundsCoordinates
+from .errors import OutOfBoundsCoordinates, EmptySectionAlreadyExists
 from nbt import nbt
 
 class EmptyChunk:
@@ -39,11 +39,11 @@ class EmptyChunk:
         
         Raises
         ------
-        Exception
-            If ``replace`` is ``False`` and section at Y exists
+        anvil.EmptySectionAlreadyExists
+            If ``replace`` is ``False`` and section with same Y already exists in this chunk
         """
         if self.sections[section.y] and not replace:
-            raise Exception('Section already exists')
+            raise EmptySectionAlreadyExists(f'EmptySection (Y={section.y}) already exists in this chunk')
         self.sections[section.y] = section
 
     def get_block(self, x: int, y: int, z: int) -> Block:
@@ -59,7 +59,7 @@ class EmptyChunk:
 
         Raises
         ------
-        OutOfBoundCoordidnates
+        anvil.OutOfBoundCoordidnates
             If X, Y or Z are not in the proper range
 
         Returns
@@ -68,10 +68,12 @@ class EmptyChunk:
             Returns ``None`` if the section is empty, meaning the block
             is most likely an air block.
         """
-        if x < 0 or x > 15 or z < 0 or z > 15:
-            raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
+        if x < 0 or x > 15:
+            raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
+        if z < 0 or z > 15:
+            raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
         if y < 0 or y > 255:
-            raise OutOfBoundsCoordinates('Y must be in range 0-255')
+            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
         section = self.sections[y // 16]
         if section is None:
             return
@@ -87,11 +89,19 @@ class EmptyChunk:
             In range of 0 to 15
         y
             In range of 0 to 255
+
+        Raises
+        ------
+        anvil.OutOfBoundCoordidnates
+            If X, Y or Z are not in the proper range
+        
         """
-        if x < 0 or x > 15 or z < 0 or z > 15:
-            raise OutOfBoundsCoordinates('X and Z must be in the range of 0-15')
+        if x < 0 or x > 15:
+            raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
+        if z < 0 or z > 15:
+            raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
         if y < 0 or y > 255:
-            raise OutOfBoundsCoordinates('Y must be in range 0-255')
+            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
         section = self.sections[y // 16]
         if section is None:
             section = EmptySection(y // 16)

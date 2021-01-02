@@ -64,7 +64,7 @@ class EmptySection:
 
         Raises
         ------
-        OutOfBoundCoordinates
+        anvil.OutOfBoundsCoordinates
             If coordinates are not in range of 0-15
         """
         if not self.inside(x, y, z):
@@ -80,6 +80,11 @@ class EmptySection:
         ----------
         int x, y, z
             Coordinates
+
+        Raises
+        ------
+        anvil.OutOfBoundsCoordinates
+            If coordinates are not in range of 0-15
         """
         if not self.inside(x, y, z):
             raise OutOfBoundsCoordinates('X Y and Z must be in range of 0-15')
