@@ -51,7 +51,10 @@ class Chunk:
     __slots__ = ('version', 'data', 'x', 'z', 'tile_entities')
 
     def __init__(self, nbt_data: nbt.NBTFile):
-        self.version = nbt_data['DataVersion'].value
+        try:
+            self.version = nbt_data['DataVersion'].value
+        except KeyError:
+            self.version = 0
         self.data = nbt_data['Level']
         self.x = self.data['xPos'].value
         self.z = self.data['zPos'].value
