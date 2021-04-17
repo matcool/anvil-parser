@@ -54,7 +54,10 @@ class Chunk:
         try:
             self.version = nbt_data['DataVersion'].value
         except KeyError:
-            self.version = 0
+            # Version is pre-1.9 snapshot 15w32a, so world does not have a Data Version.
+            # See https://minecraft.fandom.com/wiki/Data_version
+            self.version = None
+
         self.data = nbt_data['Level']
         self.x = self.data['xPos'].value
         self.z = self.data['zPos'].value
@@ -139,7 +142,7 @@ class Chunk:
             # global Y to section Y
             y %= 16
 
-        if self.version < _VERSION_17w47a:
+        if self.version is None or self.version < _VERSION_17w47a:
             # Explained in depth here https://minecraft.gamepedia.com/index.php?title=Chunk_format&oldid=1153403#Block_format
 
             if section is None or 'Blocks' not in section:
@@ -178,7 +181,7 @@ class Chunk:
         states = section['BlockStates'].value
 
         # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
-        stretches = self.version < _VERSION_20w17a
+        stretches = self.version is None or self.version < _VERSION_20w17a
         # stretches = True
 
         # get location in the BlockStates array via the index
