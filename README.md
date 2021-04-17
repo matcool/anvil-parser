@@ -2,7 +2,7 @@
 
 [![CodeFactor](https://www.codefactor.io/repository/github/matcool/anvil-parser/badge/master)](https://www.codefactor.io/repository/github/matcool/anvil-parser/overview/master)
 [![Documentation Status](https://readthedocs.org/projects/anvil-parser/badge/?version=latest)](https://anvil-parser.readthedocs.io/en/latest/?badge=latest)
-[![Build Status](https://travis-ci.org/matcool/anvil-parser.svg?branch=master)](https://travis-ci.org/matcool/anvil-parser)
+[![Tests](https://github.com/matcool/anvil-parser/actions/workflows/run-pytest.yml/badge.svg)](https://github.com/matcool/anvil-parser/actions/workflows/run-pytest.yml)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/anvil-parser)](https://pypi.org/project/anvil-parser/)
 
 Simple parser for the [Minecraft anvil file format](https://minecraft.gamepedia.com/Anvil_file_format)
