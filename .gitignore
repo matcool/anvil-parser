@@ -7,3 +7,5 @@ build/
 .vscode/
 docs/_build/
 examples/test_112.py
+*.mca
+*.mcr
