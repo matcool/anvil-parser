@@ -14,6 +14,9 @@ _VERSION_20w17a = 2529
 # where blocks went from numeric ids to namespaced ids (namespace:block_id)
 _VERSION_17w47a = 1451
 
+# This is the version where the height limit was increased from 0 - 255 to -64 -319
+_VERSION_21w06a = 2694
+
 def bin_append(a, b, length=None):
     """
     Appends number a to the left of b
@@ -78,9 +81,11 @@ class Chunk:
         anvil.OutOfBoundsCoordinates
             If Y is not in range of 0 to 15
         """
-        if y < 0 or y > 15:
+        if (y < 0 or y > 15) and self.version < _VERSION_21w06a:
             raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 15')
-
+        if (y < -4 or y > 19) and self.version >= _VERSION_21w06a:
+            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of -4 to 19')
+        
         try:
             sections = self.data["Sections"]
         except KeyError:
@@ -134,9 +139,11 @@ class Chunk:
             raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
         if z < 0 or z > 15:
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
-        if y < 0 or y > 255:
+        if (y < 0 or y > 255) and self.version < _VERSION_21w06a:
             raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
-
+        if (y < -64 or y > 319) and self.version >=_VERSION_21w06a:
+            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of -64 to 319')
+        
         if section is None:
             section = self.get_section(y // 16)
             # global Y to section Y
