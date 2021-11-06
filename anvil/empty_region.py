@@ -17,25 +17,28 @@ def from_inclusive(a, b):
 class EmptyRegion:
     """
     Used for making own regions
-    
+
     Attributes
     ----------
     chunks: List[:class:`anvil.EmptyChunk`]
         List of chunks in this region
+    chunks_data: List
+        List of packed chunks
     x: :class:`int`
     z: :class:`int`
     """
-    __slots__ = ('chunks', 'x', 'z')
+    __slots__ = ('chunks', 'chunks_data', 'x', 'z')
     def __init__(self, x: int, z: int):
         # Create a 1d list for the 32x32 chunks
         self.chunks: List[EmptyChunk] = [None] * 1024
+        self.chunks_data = [None] * 1024
         self.x = x
         self.z = z
 
     def inside(self, x: int, y: int, z: int, chunk: bool=False) -> bool:
         """
         Returns if the given coordinates are inside this region
-        
+
         Parameters
         ----------
         int x, y, z
@@ -51,7 +54,7 @@ class EmptyRegion:
     def get_chunk(self, x: int, z: int) -> EmptyChunk:
         """
         Returns the chunk at given chunk coordinates
-        
+
         Parameters
         ----------
         int x, z
@@ -68,7 +71,7 @@ class EmptyRegion:
             raise OutOfBoundsCoordinates(f'Chunk ({x}, {z}) is not inside this region')
         return self.chunks[z % 32 * 32 + x % 32]
 
-    def add_chunk(self, chunk: EmptyChunk):
+    def add_chunk(self, chunk: EmptyChunk, pack: bool):
         """
         Adds given chunk to this region.
         Will overwrite if a chunk already exists in this location
@@ -76,7 +79,8 @@ class EmptyRegion:
         Parameters
         ----------
         chunk: :class:`EmptyChunk`
-        
+        pack: bool
+
         Raises
         ------
         anvil.OutOfBoundCoordidnates
@@ -84,7 +88,15 @@ class EmptyRegion:
         """
         if not self.inside(chunk.x, 0, chunk.z, chunk=True):
             raise OutOfBoundsCoordinates(f'Chunk ({chunk.x}, {chunk.z}) is not inside this region')
-        self.chunks[chunk.z % 32 * 32 + chunk.x % 32] = chunk
+        if pack:
+            chunk_data = BytesIO()
+            nbt_data = chunk.save()
+            nbt_data.write_file(buffer=chunk_data)
+            chunk_data.seek(0)
+            chunk_data = zlib.compress(chunk_data.read())
+            self.chunks_data[chunk.z % 32 * 32 + chunk.x % 32] = chunk_data
+        else:
+            self.chunks[chunk.z % 32 * 32 + chunk.x % 32] = chunk
 
     def add_section(self, section: EmptySection, x: int, z: int, replace: bool=True):
         """
@@ -204,20 +216,25 @@ class EmptyRegion:
         """
         # Store all the chunks data as zlib compressed nbt data
         chunks_data = []
-        for chunk in self.chunks:
-            if chunk is None:
+        for i in range(len(self.chunks)):
+            if self.chunks[i] is not None:
+                chunk = self.chunks[i]
+                chunk_data = BytesIO()
+                if isinstance(chunk, Chunk):
+                    nbt_data = nbt.NBTFile()
+                    nbt_data.tags.append(nbt.TAG_Int(name='DataVersion', value=chunk.version))
+                    nbt_data.tags.append(chunk.data)
+                else:
+                    nbt_data = chunk.save()
+                nbt_data.write_file(buffer=chunk_data)
+                chunk_data.seek(0)
+                chunk_data = zlib.compress(chunk_data.read())
+            elif self.chunks_data[i] is not None:
+                chunk_data = self.chunks_data[i]
+            else:
                 chunks_data.append(None)
                 continue
-            chunk_data = BytesIO()
-            if isinstance(chunk, Chunk):
-                nbt_data = nbt.NBTFile()
-                nbt_data.tags.append(nbt.TAG_Int(name='DataVersion', value=chunk.version))
-                nbt_data.tags.append(chunk.data)
-            else:
-                nbt_data = chunk.save()
-            nbt_data.write_file(buffer=chunk_data)
-            chunk_data.seek(0)
-            chunk_data = zlib.compress(chunk_data.read())
+
             chunks_data.append(chunk_data)
 
         # This is what is added after the location and timestamp header
