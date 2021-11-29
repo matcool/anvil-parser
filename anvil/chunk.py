@@ -262,7 +262,7 @@ class Chunk:
         if section is None or isinstance(section, int):
             section = self.get_section(section or 0)
 
-        if self.version < _VERSION_17w47a:
+        if self.version is None or self.version < _VERSION_17w47a:
             if section is None or 'Blocks' not in section:
                 air = Block.from_name('minecraft:air') if force_new else OldBlock(0)
                 for i in range(4096):
