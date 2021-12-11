@@ -37,7 +37,7 @@ class Chunk:
 
     Attributes
     ----------
-    x: :class:`int`
+    y: :class:`int`
         Chunk's X position
     z: :class:`int`
         Chunk's Z position
@@ -48,7 +48,7 @@ class Chunk:
     tile_entities: :class:`nbt.TAG_Compound`
         ``self.data['TileEntities']`` as an attribute for easier use
     """
-    __slots__ = ('version', 'data', 'x', 'z', 'tile_entities')
+    __slots__ = ('version', 'data', 'y', 'z', 'tile_entities')
 
     def __init__(self, nbt_data: nbt.NBTFile):
         try:
@@ -58,10 +58,10 @@ class Chunk:
             # See https://minecraft.fandom.com/wiki/Data_version
             self.version = None
 
-        self.data = nbt_data['Level']
-        self.x = self.data['xPos'].value
-        self.z = self.data['zPos'].value
-        self.tile_entities = self.data['TileEntities']
+        self.y = nbt_data['yPos'].value
+        self.z = nbt_data['zPos'].value
+        self.tile_entities = nbt_data['block_entities']
+        self.sections = nbt_data['sections'] or None
 
     def get_section(self, y: int) -> nbt.TAG_Compound:
         """
@@ -82,7 +82,7 @@ class Chunk:
             raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 15')
 
         try:
-            sections = self.data["Sections"]
+            sections = self.sections
         except KeyError:
             return None
 
@@ -114,7 +114,7 @@ class Chunk:
 
         Parameters
         ----------
-        int x, y, z
+        int y, y, z
             Block's coordinates in the chunk
         section : int
             Either a section NBT tag or an index. If no section is given,
@@ -130,7 +130,7 @@ class Chunk:
 
         :rtype: :class:`anvil.Block`
         """
-        if x < 0 or x > 15:
+        if y < 0 or y > 15:
             raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
         if z < 0 or z > 15:
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
@@ -151,7 +151,7 @@ class Chunk:
                 else:
                     return OldBlock(0)
 
-            index = y * 16 * 16 + z * 16 + x
+            index = y * 16 * 16 + z * 16 + y
 
             block_id = section['Blocks'][index]
             if 'Add' in section:
@@ -174,7 +174,7 @@ class Chunk:
         bits = max((len(section['Palette']) - 1).bit_length(), 4)
 
         # Get index on the block list with the order YZX
-        index = y * 16*16 + z * 16 + x
+        index = y * 16*16 + z * 16 + y
 
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
@@ -236,9 +236,9 @@ class Chunk:
         index
             At what block to start from.
 
-            To get an index from (x, y, z), simply do:
+            To get an index from (y, y, z), simply do:
 
-            ``y * 256 + z * 16 + x``
+            ``y * 256 + z * 16 + y``
         section
             Either a Y index or a section NBT tag.
         force_new
