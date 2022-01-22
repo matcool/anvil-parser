@@ -1,5 +1,6 @@
 from typing import Union, Tuple, Generator, Optional
 from nbt import nbt
+from .biome import Biome
 from .block import Block, OldBlock
 from .region import Region
 from .errors import OutOfBoundsCoordinates, ChunkNotFound
@@ -9,6 +10,10 @@ import math
 # This version removes block state value stretching from the storage
 # so a block value isn't in multiple elements of the array
 _VERSION_20w17a = 2529
+
+# This version changes how biomes are stored to allow for biomes at different heights
+# https://minecraft.fandom.com/wiki/Java_Edition_19w36a
+_VERSION_19w36a = 2203
 
 # This is the version where "The Flattening" (https://minecraft.gamepedia.com/Java_Edition_1.13/Flattening) happened
 # where blocks went from numeric ids to namespaced ids (namespace:block_id)
@@ -107,6 +112,41 @@ class Chunk:
         if section is None:
             return
         return tuple(Block.from_palette(i) for i in section['Palette'])
+
+    def get_biome(self, x: int, y : int, z: int) -> Biome:
+        """
+        Returns the biome in the given coordinates
+
+        Parameters
+        ----------
+        int x, y, z
+            Biome's coordinates in the chunk
+
+        Raises
+        ------
+        anvil.OutOfBoundCoordidnates
+            If X, Y or Z are not in the proper range
+
+        :rtype: :class:`anvil.Biome`
+        """
+        if x < 0 or x > 15:
+            raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
+        if z < 0 or z > 15:
+            raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
+        if y < 0 or y > 255:
+            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
+
+        biomes = self.data['Biomes']
+        if self.version < _VERSION_19w36a: 
+            # Each biome index refers to a column stored Z then X.
+            index = z * 16 + x
+        else:
+            # https://minecraft.fandom.com/wiki/Java_Edition_19w36a
+            # Get index on the biome list with the order YZX
+            # Each biome index refers to a 4x4 volumes here so we do integer division by 4
+            index = (y // 4) * 4 * 4 + (z // 4) * 4 + (x // 4)
+        biome_id = biomes[index]
+        return Biome(biome_id)
 
     def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None, force_new: bool=False) -> Union[Block, OldBlock]:
         """
