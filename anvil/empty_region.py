@@ -183,6 +183,21 @@ class EmptyRegion:
         if self.inside(x, y, z):
             self.set_block(block, x, y, z)
 
+    def set_biome_if_inside(self, biome: Biome, x: int, z: int):
+        """
+        Helper function that only sets
+        the biome if ``self.inside(x, 0, z)`` is true
+        
+        Parameters
+        ----------
+        biome: :class:`Biome`
+            Biome to place
+        int x, z
+            Coordinates
+        """
+        if self.inside(x, 0, z):
+            self.set_biome(biome, x, z)
+
     def fill(self, block: Block, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, ignore_outside: bool=False):
         """
         Fills in blocks from
@@ -217,6 +232,40 @@ class EmptyRegion:
                         self.set_if_inside(block, x, y, z)
                     else:
                         self.set_block(block, x, y, z)
+                        
+    def fill_biome(self, biome: Biome, x1: int, z1: int, x2: int, z2: int, ignore_outside: bool=False):
+        """
+        Fills in biomes from
+        ``(x1, z1)`` to ``(x2, z2)``
+        in a rectangle.
+
+        Parameters
+        ----------
+        biome: :class:`Biome`
+        int x1, z1
+            Coordinates
+        int x2, z2
+            Coordinates
+        ignore_outside
+            Whether to ignore if coordinates are outside the region
+
+        Raises
+        ------
+        anvil.OutOfBoundsCoordinates
+            If any of the coordinates are outside the region
+        """
+        if not ignore_outside:
+            if not self.inside(x1, 0, z1):
+                raise OutOfBoundsCoordinates(f'First coords ({x1}, {z1}) is not inside this region')
+            if not self.inside(x2, 0, z2):
+                raise OutOfBoundsCoordinates(f'Second coords ({x2}, {z2}) is not inside this region')
+
+        for z in from_inclusive(z1, z2):
+            for x in from_inclusive(x1, x2):
+                if ignore_outside:
+                    self.set_biome_if_inside(biome, x, z)
+                else:
+                    self.set_biome(biome, x, z)
 
     def save(self, file: Union[str, BinaryIO]=None) -> bytes:
         """
