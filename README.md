@@ -57,7 +57,7 @@ region.save('r.0.0.mca')
 # Todo
 *things to do before 1.0.0*
 - [x] Proper documentation
-- [ ] Biomes
+- [x] Biomes
 - [x] CI
 - [ ] More tests
   - [ ] Tests for 20w17a+ BlockStates format
