@@ -3,6 +3,7 @@ from .empty_chunk import EmptyChunk
 from .chunk import Chunk
 from .empty_section import EmptySection
 from .block import Block
+from .biome import Biome
 from .errors import OutOfBoundsCoordinates
 from io import BytesIO
 from nbt import nbt
@@ -139,6 +140,33 @@ class EmptyRegion:
             chunk = EmptyChunk(cx, cz)
             self.add_chunk(chunk)
         chunk.set_block(block, x % 16, y, z % 16)
+
+    def set_biome(self, biome: Biome, x: int, z: int):
+        """
+        Sets biome at given coordinates.
+        New chunk is made if it doesn't exist.
+
+        Parameters
+        ----------
+        biome: :class:`Biome`
+            Biome to place
+        int x, z
+            Coordinates
+
+        Raises
+        ------
+        anvil.OutOfBoundsCoordinates
+            If the biome (x, z) is not inside this region
+        """
+        if not self.inside(x, 0, z):
+            raise OutOfBoundsCoordinates(f'Biome ({x}, {z}) is not inside this region')
+        cx = x // 16
+        cz = z // 16
+        chunk = self.get_chunk(cx, cz)
+        if chunk is None:
+            chunk = EmptyChunk(cx, cz)
+            self.add_chunk(chunk)
+        chunk.set_biome(biome, x % 16, z % 16)
 
     def set_if_inside(self, block: Block, x: int, y: int, z: int):
         """
