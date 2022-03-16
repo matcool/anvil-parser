@@ -1,2 +1,2 @@
-NBT==1.5.0
+NBT==1.5.1
 frozendict==1.2
