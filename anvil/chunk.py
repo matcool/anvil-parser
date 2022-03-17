@@ -6,6 +6,9 @@ from .region import Region
 from .errors import OutOfBoundsCoordinates, ChunkNotFound
 import math
 
+# This is the final version before the Minecraft overhaul that includes the 
+# 1.18 expansion of the world's vertical height from -64 to 319
+_VERSION_1_17_1 = 2730
 
 # This version removes block state value stretching from the storage
 # so a block value isn't in multiple elements of the array
@@ -67,10 +70,11 @@ class Chunk:
             # See https://minecraft.fandom.com/wiki/Data_version
             self.version = None
 
-        if self.version > 2730:
+        if self.version > _VERSION_1_17_1:
             self.data = nbt_data
             self.x = nbt_data["xPos"].value
             self.z = nbt_data["zPos"].value
+            # Have not added 1.18 support for 'tile entities'
         else:
             self.data = nbt_data["Level"]
             self.x = self.data["xPos"].value
@@ -92,10 +96,14 @@ class Chunk:
         anvil.OutOfBoundsCoordinates
             If Y is not in range of 0 to 15
         """
-        if y < -4 or y > 19:
-            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 15")
+        if self.version > _VERSION_1_17_1:
+            if y < -4 or y > 19:
+                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of -4 to 19")
+        else:
+            if y < 0 or y > 15:
+                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 15")
 
-        if self.version > 2730:
+        if self.version > _VERSION_1_17_1:
             try:
                 sections = self.data["sections"]
             except KeyError:
@@ -196,8 +204,12 @@ class Chunk:
             raise OutOfBoundsCoordinates(f"X ({x!r}) must be in range of 0 to 15")
         if z < 0 or z > 15:
             raise OutOfBoundsCoordinates(f"Z ({z!r}) must be in range of 0 to 15")
-        if y < -64 or y > 319:
-            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 255")
+        if self.version > _VERSION_1_17_1:
+            if y < -64 or y > 319:
+                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of -64 to 319")
+        else:
+            if y < 0 or y > 255:
+                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 255")
 
         if section is None:
             section = self.get_section(y // 16)
@@ -229,17 +241,16 @@ class Chunk:
 
         # If its an empty section its most likely an air block
 
-        if self.version > 2730:
-            blockstates_string = "block_states"
+        if self.version > _VERSION_1_17_1:
+            if section is None or 'block_states' not in section:
+                return Block.from_name("minecraft:air")
         else:
-            blockstates_string = "BlockStates"
-
-        if section is None or blockstates_string not in section:
-            return Block.from_name("minecraft:air")
+            if section is None or 'BlockStates' not in section:
+                return Block.from_name("minecraft:air")
 
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
-        if self.version > 2730:
+        if self.version > _VERSION_1_17_1:
             bits = max((len(section["block_states"]["palette"]) - 1).bit_length(), 4)
         else:
             bits = max((len(section["Palette"]) - 1).bit_length(), 4)
@@ -249,10 +260,10 @@ class Chunk:
 
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
-        if self.version > 2730:
-            states = section[blockstates_string]["data"].value
+        if self.version > _VERSION_1_17_1:
+            states = section['block_states']['data'].value
         else:
-            states = section[blockstates_string].value
+            states = section['BlockStates'].value
 
         # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
         stretches = self.version is None or self.version < _VERSION_20w17a
@@ -300,11 +311,7 @@ class Chunk:
         # which are the palette index
         palette_id = shifted_data & 2**bits - 1
 
-        print(palette_id)
-
-        # return section
-
-        if self.version > 2730:
+        if self.version > _VERSION_1_17_1:
             block = section["block_states"]["palette"][palette_id]
             return Block.from_palette(block)
         else:
