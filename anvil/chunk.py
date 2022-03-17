@@ -19,6 +19,7 @@ _VERSION_19w36a = 2203
 # where blocks went from numeric ids to namespaced ids (namespace:block_id)
 _VERSION_17w47a = 1451
 
+
 def bin_append(a, b, length=None):
     """
     Appends number a to the left of b
@@ -27,12 +28,14 @@ def bin_append(a, b, length=None):
     length = length or b.bit_length()
     return (a << length) | b
 
+
 def nibble(byte_array, index):
     value = byte_array[index // 2]
     if index % 2:
         return value >> 4
     else:
         return value & 0b1111
+
 
 class Chunk:
     """
@@ -53,20 +56,26 @@ class Chunk:
     tile_entities: :class:`nbt.TAG_Compound`
         ``self.data['TileEntities']`` as an attribute for easier use
     """
-    __slots__ = ('version', 'data', 'x', 'z', 'tile_entities')
+
+    __slots__ = ("version", "data", "x", "z", "tile_entities")
 
     def __init__(self, nbt_data: nbt.NBTFile):
         try:
-            self.version = nbt_data['DataVersion'].value
+            self.version = nbt_data["DataVersion"].value
         except KeyError:
             # Version is pre-1.9 snapshot 15w32a, so world does not have a Data Version.
             # See https://minecraft.fandom.com/wiki/Data_version
             self.version = None
 
-        self.data = nbt_data['Level']
-        self.x = self.data['xPos'].value
-        self.z = self.data['zPos'].value
-        self.tile_entities = self.data['TileEntities']
+        if self.version > 2730:
+            self.data = nbt_data
+            self.x = nbt_data["xPos"].value
+            self.z = nbt_data["zPos"].value
+        else:
+            self.data = nbt_data["Level"]
+            self.x = self.data["xPos"].value
+            self.z = self.data["zPos"].value
+            self.tile_entities = self.data["TileEntities"]
 
     def get_section(self, y: int) -> nbt.TAG_Compound:
         """
@@ -83,16 +92,22 @@ class Chunk:
         anvil.OutOfBoundsCoordinates
             If Y is not in range of 0 to 15
         """
-        if y < 0 or y > 15:
-            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 15')
+        if y < -4 or y > 19:
+            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 15")
 
-        try:
-            sections = self.data["Sections"]
-        except KeyError:
-            return None
+        if self.version > 2730:
+            try:
+                sections = self.data["sections"]
+            except KeyError:
+                return None
+        else:
+            try:
+                sections = self.data["Sections"]
+            except KeyError:
+                return None
 
         for section in sections:
-            if section['Y'].value == y:
+            if section["Y"].value == y:
                 return section
 
     def get_palette(self, section: Union[int, nbt.TAG_Compound]) -> Tuple[Block]:
@@ -111,9 +126,9 @@ class Chunk:
             section = self.get_section(section)
         if section is None:
             return
-        return tuple(Block.from_palette(i) for i in section['Palette'])
+        return tuple(Block.from_palette(i) for i in section["Palette"])
 
-    def get_biome(self, x: int, y : int, z: int) -> Biome:
+    def get_biome(self, x: int, y: int, z: int) -> Biome:
         """
         Returns the biome in the given coordinates
 
@@ -130,14 +145,14 @@ class Chunk:
         :rtype: :class:`anvil.Biome`
         """
         if x < 0 or x > 15:
-            raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
+            raise OutOfBoundsCoordinates(f"X ({x!r}) must be in range of 0 to 15")
         if z < 0 or z > 15:
-            raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
+            raise OutOfBoundsCoordinates(f"Z ({z!r}) must be in range of 0 to 15")
         if y < 0 or y > 255:
-            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
+            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 255")
 
-        biomes = self.data['Biomes']
-        if self.version < _VERSION_19w36a: 
+        biomes = self.data["Biomes"]
+        if self.version < _VERSION_19w36a:
             # Each biome index refers to a column stored Z then X.
             index = z * 16 + x
         else:
@@ -148,7 +163,14 @@ class Chunk:
         biome_id = biomes[index]
         return Biome(biome_id)
 
-    def get_block(self, x: int, y: int, z: int, section: Union[int, nbt.TAG_Compound]=None, force_new: bool=False) -> Union[Block, OldBlock]:
+    def get_block(
+        self,
+        x: int,
+        y: int,
+        z: int,
+        section: Union[int, nbt.TAG_Compound] = None,
+        force_new: bool = False,
+    ) -> Union[Block, OldBlock]:
         """
         Returns the block in the given coordinates
 
@@ -171,11 +193,11 @@ class Chunk:
         :rtype: :class:`anvil.Block`
         """
         if x < 0 or x > 15:
-            raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
+            raise OutOfBoundsCoordinates(f"X ({x!r}) must be in range of 0 to 15")
         if z < 0 or z > 15:
-            raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
-        if y < 0 or y > 255:
-            raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
+            raise OutOfBoundsCoordinates(f"Z ({z!r}) must be in range of 0 to 15")
+        if y < -64 or y > 319:
+            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 255")
 
         if section is None:
             section = self.get_section(y // 16)
@@ -185,19 +207,19 @@ class Chunk:
         if self.version is None or self.version < _VERSION_17w47a:
             # Explained in depth here https://minecraft.gamepedia.com/index.php?title=Chunk_format&oldid=1153403#Block_format
 
-            if section is None or 'Blocks' not in section:
+            if section is None or "Blocks" not in section:
                 if force_new:
-                    return Block.from_name('minecraft:air')
+                    return Block.from_name("minecraft:air")
                 else:
                     return OldBlock(0)
 
             index = y * 16 * 16 + z * 16 + x
 
-            block_id = section['Blocks'][index]
-            if 'Add' in section:
-                block_id += nibble(section['Add'], index) << 8
+            block_id = section["Blocks"][index]
+            if "Add" in section:
+                block_id += nibble(section["Add"], index) << 8
 
-            block_data = nibble(section['Data'], index)
+            block_data = nibble(section["Data"], index)
 
             block = OldBlock(block_id, block_data)
             if force_new:
@@ -206,19 +228,31 @@ class Chunk:
                 return block
 
         # If its an empty section its most likely an air block
-        if section is None or 'BlockStates' not in section:
-            return Block.from_name('minecraft:air')
+
+        if self.version > 2730:
+            blockstates_string = "block_states"
+        else:
+            blockstates_string = "BlockStates"
+
+        if section is None or blockstates_string not in section:
+            return Block.from_name("minecraft:air")
 
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
-        bits = max((len(section['Palette']) - 1).bit_length(), 4)
+        if self.version > 2730:
+            bits = max((len(section["block_states"]["palette"]) - 1).bit_length(), 4)
+        else:
+            bits = max((len(section["Palette"]) - 1).bit_length(), 4)
 
         # Get index on the block list with the order YZX
-        index = y * 16*16 + z * 16 + x
+        index = y * 16 * 16 + z * 16 + x
 
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
-        states = section['BlockStates'].value
+        if self.version > 2730:
+            states = section[blockstates_string]["data"].value
+        else:
+            states = section[blockstates_string].value
 
         # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
         stretches = self.version is None or self.version < _VERSION_20w17a
@@ -258,16 +292,31 @@ class Chunk:
             # Next state                Current state (already shifted)
             # 0b101010110101101010010   0b01
             # will result in bin_append(0b010, 0b01, 2) = 0b01001
-            shifted_data = bin_append(data & 2**leftover - 1, shifted_data, bits-leftover)
+            shifted_data = bin_append(
+                data & 2**leftover - 1, shifted_data, bits - leftover
+            )
 
         # get `bits` least significant bits
         # which are the palette index
         palette_id = shifted_data & 2**bits - 1
 
-        block = section['Palette'][palette_id]
-        return Block.from_palette(block)
+        print(palette_id)
 
-    def stream_blocks(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None, force_new: bool=False) -> Generator[Block, None, None]:
+        # return section
+
+        if self.version > 2730:
+            block = section["block_states"]["palette"][palette_id]
+            return Block.from_palette(block)
+        else:
+            block = section["Palette"][palette_id]
+            return Block.from_palette(block)
+
+    def stream_blocks(
+        self,
+        index: int = 0,
+        section: Union[int, nbt.TAG_Compound] = None,
+        force_new: bool = False,
+    ) -> Generator[Block, None, None]:
         """
         Returns a generator for all the blocks in given section
 
@@ -295,7 +344,9 @@ class Chunk:
         :class:`anvil.Block`
         """
         if isinstance(section, int) and (section < 0 or section > 16):
-            raise OutOfBoundsCoordinates(f'section ({section!r}) must be in range of 0 to 15')
+            raise OutOfBoundsCoordinates(
+                f"section ({section!r}) must be in range of 0 to 15"
+            )
 
         # For better understanding of this code, read get_block()'s source
 
@@ -303,18 +354,18 @@ class Chunk:
             section = self.get_section(section or 0)
 
         if self.version < _VERSION_17w47a:
-            if section is None or 'Blocks' not in section:
-                air = Block.from_name('minecraft:air') if force_new else OldBlock(0)
+            if section is None or "Blocks" not in section:
+                air = Block.from_name("minecraft:air") if force_new else OldBlock(0)
                 for i in range(4096):
                     yield air
                 return
 
             while index < 4096:
-                block_id = section['Blocks'][index]
-                if 'Add' in section:
-                    block_id += nibble(section['Add'], index) << 8
+                block_id = section["Blocks"][index]
+                if "Add" in section:
+                    block_id += nibble(section["Add"], index) << 8
 
-                block_data = nibble(section['Data'], index)
+                block_data = nibble(section["Data"], index)
 
                 block = OldBlock(block_id, block_data)
                 if force_new:
@@ -325,14 +376,14 @@ class Chunk:
                 index += 1
             return
 
-        if section is None or 'BlockStates' not in section:
-            air = Block.from_name('minecraft:air')
+        if section is None or "BlockStates" not in section:
+            air = Block.from_name("minecraft:air")
             for i in range(4096):
                 yield air
             return
 
-        states = section['BlockStates'].value
-        palette = section['Palette']
+        states = section["BlockStates"].value
+        palette = section["Palette"]
 
         bits = max((len(palette) - 1).bit_length(), 4)
 
@@ -380,7 +431,9 @@ class Chunk:
             data >>= bits
             data_len -= bits
 
-    def stream_chunk(self, index: int=0, section: Union[int, nbt.TAG_Compound]=None) -> Generator[Block, None, None]:
+    def stream_chunk(
+        self, index: int = 0, section: Union[int, nbt.TAG_Compound] = None
+    ) -> Generator[Block, None, None]:
         """
         Returns a generator for all the blocks in the chunk
 
@@ -401,7 +454,7 @@ class Chunk:
         To iterate through all tile entities in the chunk, use :class:`Chunk.tile_entities`
         """
         for tile_entity in self.tile_entities:
-            t_x, t_y, t_z = [tile_entity[k].value for k in 'xyz']
+            t_x, t_y, t_z = [tile_entity[k].value for k in "xyz"]
             if x == t_x and y == t_y and z == t_z:
                 return tile_entity
 
@@ -424,5 +477,5 @@ class Chunk:
             region = Region.from_file(region)
         nbt_data = region.chunk_data(chunk_x, chunk_z)
         if nbt_data is None:
-            raise ChunkNotFound(f'Could not find chunk ({chunk_x}, {chunk_z})')
+            raise ChunkNotFound(f"Could not find chunk ({chunk_x}, {chunk_z})")
         return cls(nbt_data)
