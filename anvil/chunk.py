@@ -103,7 +103,7 @@ class Chunk:
             if y < 0 or y > 15:
                 raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 15")
 
-        if self.version > _VERSION_1_17_1:
+        if 'sections' in self.data:
             try:
                 sections = self.data["sections"]
             except KeyError:
@@ -240,17 +240,14 @@ class Chunk:
                 return block
 
         # If its an empty section its most likely an air block
-
-        if self.version > _VERSION_1_17_1:
-            if section is None or 'block_states' not in section:
-                return Block.from_name("minecraft:air")
-        else:
-            if section is None or 'BlockStates' not in section:
-                return Block.from_name("minecraft:air")
+        if section is None:
+            return Block.from_name("minecraft:air")
+        elif ('block_states' not in section) and ('BlockStates' not in section):
+            return Block.from_name("minecraft:air")
 
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
-        if self.version > _VERSION_1_17_1:
+        if 'block_states' in section:
             bits = max((len(section["block_states"]["palette"]) - 1).bit_length(), 4)
         else:
             bits = max((len(section["Palette"]) - 1).bit_length(), 4)
@@ -260,8 +257,12 @@ class Chunk:
 
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
-        if self.version > _VERSION_1_17_1:
-            states = section['block_states']['data'].value
+        if 'block_states' in section:
+            if 'data' in section['block_states']:
+                states = section['block_states']['data'].value
+            else:
+                print('data tag is missing: chunk.py line ~264')
+                return Block.from_name("minecraft:air")
         else:
             states = section['BlockStates'].value
 
@@ -311,9 +312,13 @@ class Chunk:
         # which are the palette index
         palette_id = shifted_data & 2**bits - 1
 
-        if self.version > _VERSION_1_17_1:
-            block = section["block_states"]["palette"][palette_id]
-            return Block.from_palette(block)
+        if 'block_states' in section:
+            if 'palette' in section['block_states']:
+                block = section["block_states"]["palette"][palette_id]
+                return Block.from_palette(block)
+            else:
+                print('properties tag is missing: chunk.py line ~320')
+                return Block.from_name("minecraft:air")
         else:
             block = section["Palette"][palette_id]
             return Block.from_palette(block)
