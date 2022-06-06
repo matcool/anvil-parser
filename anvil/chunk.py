@@ -4,7 +4,6 @@ from .biome import Biome
 from .block import Block, OldBlock
 from .region import Region
 from .errors import OutOfBoundsCoordinates, ChunkNotFound
-import math
 
 # This is the final version before the Minecraft overhaul that includes the 
 # 1.18 expansion of the world's vertical height from -64 to 319
@@ -72,14 +71,12 @@ class Chunk:
 
         if self.version > _VERSION_1_17_1:
             self.data = nbt_data
-            self.x = nbt_data["xPos"].value
-            self.z = nbt_data["zPos"].value
             # Have not added 1.18 support for 'tile entities'
         else:
             self.data = nbt_data["Level"]
-            self.x = self.data["xPos"].value
-            self.z = self.data["zPos"].value
             self.tile_entities = self.data["TileEntities"]
+        self.x = self.data["xPos"].value
+        self.z = self.data["zPos"].value
 
     def get_section(self, y: int) -> nbt.TAG_Compound:
         """
@@ -104,10 +101,7 @@ class Chunk:
                 raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 15")
 
         if 'sections' in self.data:
-            try:
-                sections = self.data["sections"]
-            except KeyError:
-                return None
+            sections = self.data["sections"]
         else:
             try:
                 sections = self.data["Sections"]
@@ -240,17 +234,18 @@ class Chunk:
                 return block
 
         # If its an empty section its most likely an air block
-        if section is None:
-            return Block.from_name("minecraft:air")
-        elif ('block_states' not in section) and ('BlockStates' not in section):
+        if (section is None
+            or 'block_states' not in section 
+            and 'BlockStates' not in section):
             return Block.from_name("minecraft:air")
 
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
         if 'block_states' in section:
-            bits = max((len(section["block_states"]["palette"]) - 1).bit_length(), 4)
+            palette = section["block_states"]["palette"]
         else:
-            bits = max((len(section["Palette"]) - 1).bit_length(), 4)
+            palette = section["Palette"]
+        bits = max((len(palette) - 1).bit_length(), 4)
 
         # Get index on the block list with the order YZX
         index = y * 16 * 16 + z * 16 + x
@@ -268,7 +263,6 @@ class Chunk:
 
         # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
         stretches = self.version is None or self.version < _VERSION_20w17a
-        # stretches = True
 
         # get location in the BlockStates array via the index
         if stretches:
