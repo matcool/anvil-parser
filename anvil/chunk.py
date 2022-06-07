@@ -39,6 +39,22 @@ def nibble(byte_array, index):
         return value & 0b1111
 
 
+def _palette_from_section(section: nbt.TAG_Compound) -> nbt.TAG_List:
+    if 'block_states' in section:
+        return section["block_states"]["palette"]
+    else:
+        return section["Palette"]
+
+
+def _states_from_section(section: nbt.TAG_Compound) -> list:
+        # BlockStates is an array of 64 bit numbers
+        # that holds the blocks index on the palette list
+        if 'block_states' in section:
+            return section['block_states']['data'].value
+        else:
+            return section['BlockStates'].value
+
+
 class Chunk:
     """
     Represents a chunk from a ``.mca`` file.
@@ -128,7 +144,8 @@ class Chunk:
             section = self.get_section(section)
         if section is None:
             return
-        return tuple(Block.from_palette(i) for i in section["Palette"])
+        palette = _palette_from_section(section)
+        return tuple(Block.from_palette(i) for i in palette)
 
     def get_biome(self, x: int, y: int, z: int) -> Biome:
         """
@@ -234,33 +251,21 @@ class Chunk:
                 return block
 
         # If its an empty section its most likely an air block
-        if (section is None
-            or 'block_states' not in section 
-            and 'BlockStates' not in section):
+        if section is None:
             return Block.from_name("minecraft:air")
-
+        try:
+            states = _states_from_section(section)
+        except KeyError:
+            return Block.from_name("minecraft:air")
+            
         # Number of bits each block is on BlockStates
         # Cannot be lower than 4
-        if 'block_states' in section:
-            palette = section["block_states"]["palette"]
-        else:
-            palette = section["Palette"]
+        palette = _palette_from_section(section)
+
         bits = max((len(palette) - 1).bit_length(), 4)
 
         # Get index on the block list with the order YZX
         index = y * 16 * 16 + z * 16 + x
-
-        # BlockStates is an array of 64 bit numbers
-        # that holds the blocks index on the palette list
-        if 'block_states' in section:
-            if 'data' in section['block_states']:
-                states = section['block_states']['data'].value
-            else:
-                print('data tag is missing: chunk.py line ~264')
-                return Block.from_name("minecraft:air")
-        else:
-            states = section['BlockStates'].value
-
         # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
         stretches = self.version is None or self.version < _VERSION_20w17a
 
@@ -305,17 +310,7 @@ class Chunk:
         # get `bits` least significant bits
         # which are the palette index
         palette_id = shifted_data & 2**bits - 1
-
-        if 'block_states' in section:
-            if 'palette' in section['block_states']:
-                block = section["block_states"]["palette"][palette_id]
-                return Block.from_palette(block)
-            else:
-                print('properties tag is missing: chunk.py line ~320')
-                return Block.from_name("minecraft:air")
-        else:
-            block = section["Palette"][palette_id]
-            return Block.from_palette(block)
+        return Block.from_palette(palette[palette_id])
 
     def stream_blocks(
         self,
@@ -362,7 +357,7 @@ class Chunk:
         if self.version < _VERSION_17w47a:
             if section is None or "Blocks" not in section:
                 air = Block.from_name("minecraft:air") if force_new else OldBlock(0)
-                for i in range(4096):
+                for _ in range(4096):
                     yield air
                 return
 
@@ -382,26 +377,19 @@ class Chunk:
                 index += 1
             return
 
-        if (section is None 
-            or "BlockStates" not in section 
-            and 'block_states' not in section):
-            air = Block.from_name("minecraft:air")
-            for i in range(4096):
+        air = Block.from_name("minecraft:air")
+        if section is None:
+            for _ in range(4096):
+                yield air
+            return
+        try:
+            states = _states_from_section(section)
+        except KeyError:
+            for _ in range(4096):
                 yield air
             return
 
-        if 'block_states' in section:
-            if 'data' in section['block_states']:
-                states = section['block_states']['data'].value
-            else:
-                air = Block.from_name("minecraft:air")
-                for i in range(4096):
-                    yield air
-                return 
-        else:
-            states = section['BlockStates'].value
-
-        palette = section['block_states']['palette']
+        palette = _palette_from_section(section)
         bits = max((len(palette) - 1).bit_length(), 4)
 
         stretches = self.version < _VERSION_20w17a
@@ -412,8 +400,7 @@ class Chunk:
             state = index // (64 // bits)
 
         data = states[state]
-        if data < 0:
-            data += 2**64
+        if data < 0: data += 2**64
 
         bits_mask = 2**bits - 1
 
