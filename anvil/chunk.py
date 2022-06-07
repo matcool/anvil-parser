@@ -87,7 +87,7 @@ class Chunk:
 
         if self.version > _VERSION_1_17_1:
             self.data = nbt_data
-            # Have not added 1.18 support for 'tile entities'
+            self.tile_entities = self.data["block_entities"]
         else:
             self.data = nbt_data["Level"]
             self.tile_entities = self.data["TileEntities"]
