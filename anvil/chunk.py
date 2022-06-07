@@ -55,6 +55,13 @@ def _states_from_section(section: nbt.TAG_Compound) -> list:
             return section['BlockStates'].value
 
 
+def _section_height_range(version: Optional[int]) -> range:
+    if version is not None and version > _VERSION_17w47a:
+        return range(-4, 20)
+    else:
+        return range(16)
+
+
 class Chunk:
     """
     Represents a chunk from a ``.mca`` file.
@@ -109,12 +116,10 @@ class Chunk:
         anvil.OutOfBoundsCoordinates
             If Y is not in range of 0 to 15
         """
-        if self.version > _VERSION_1_17_1:
-            if y < -4 or y > 19:
-                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of -4 to 19")
-        else:
-            if y < 0 or y > 15:
-                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 15")
+        section_range = _section_height_range(self.version)
+        if y not in section_range:
+            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of "
+                f"{section_range.start} to {section_range.stop}")
 
         if 'sections' in self.data:
             sections = self.data["sections"]
@@ -163,12 +168,14 @@ class Chunk:
 
         :rtype: :class:`anvil.Biome`
         """
-        if x < 0 or x > 15:
+        section_range = _section_height_range(self.version)
+        if x not in range(16):
             raise OutOfBoundsCoordinates(f"X ({x!r}) must be in range of 0 to 15")
-        if z < 0 or z > 15:
+        if z not in range(16):
             raise OutOfBoundsCoordinates(f"Z ({z!r}) must be in range of 0 to 15")
-        if y < 0 or y > 255:
-            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 255")
+        if y // 16 not in section_range:
+            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of "
+                f"{section_range.start * 16} to {section_range.stop * 16 - 1}")
 
         biomes = self.data["Biomes"]
         if self.version < _VERSION_19w36a:
@@ -211,16 +218,14 @@ class Chunk:
 
         :rtype: :class:`anvil.Block`
         """
-        if x < 0 or x > 15:
+        if x not in range(16):
             raise OutOfBoundsCoordinates(f"X ({x!r}) must be in range of 0 to 15")
-        if z < 0 or z > 15:
+        if z not in range(16):
             raise OutOfBoundsCoordinates(f"Z ({z!r}) must be in range of 0 to 15")
-        if self.version > _VERSION_1_17_1:
-            if y < -64 or y > 319:
-                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of -64 to 319")
-        else:
-            if y < 0 or y > 255:
-                raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of 0 to 255")
+        section_range = _section_height_range(self.version)
+        if y // 16 not in section_range:
+            raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of "
+                f"{section_range.start * 16} to {section_range.stop * 16 - 1}")
 
         if section is None:
             section = self.get_section(y // 16)
@@ -344,10 +349,12 @@ class Chunk:
         ------
         :class:`anvil.Block`
         """
-        if isinstance(section, int) and (section < 0 or section > 16):
-            raise OutOfBoundsCoordinates(
-                f"section ({section!r}) must be in range of 0 to 15"
-            )
+
+        if isinstance(section, int):
+            section_range = _section_height_range(self.version)
+            if section not in section_range:
+                raise OutOfBoundsCoordinates(f"section ({section!r}) must be in range of "
+                    f"{section_range.start} to {section_range.stop}")
 
         # For better understanding of this code, read get_block()'s source
 
@@ -447,16 +454,7 @@ class Chunk:
         ------
         :class:`anvil.Block`
         """
-
-        if 'sections' in self.data:
-            sections = self.data["sections"]
-        else:
-            try:
-                sections = self.data["Sections"]
-            except KeyError:
-                raise StopIteration
-
-        for section in sections:
+        for section in _section_height_range(self.version):
             for block in self.stream_blocks(section=section):
                 yield block
 

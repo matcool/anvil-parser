@@ -70,11 +70,11 @@ class EmptyChunk:
             Returns ``None`` if the section is empty, meaning the block
             is most likely an air block.
         """
-        if x < 0 or x > 15:
+        if x not in range(16):
             raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
-        if z < 0 or z > 15:
+        if z not in range(16):
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
-        if y < 0 or y > 255:
+        if y not in range(256):
             raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
         section = self.sections[y // 16]
         if section is None:
@@ -96,13 +96,12 @@ class EmptyChunk:
         ------
         anvil.OutOfBoundCoordidnates
             If X, Y or Z are not in the proper range
-        
         """
-        if x < 0 or x > 15:
+        if x not in range(16):
             raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
-        if z < 0 or z > 15:
+        if z not in range(16):
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
-        if y < 0 or y > 255:
+        if y not in range(256):
             raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
         section = self.sections[y // 16]
         if section is None:
@@ -125,9 +124,9 @@ class EmptyChunk:
             If X or Z are not in the proper range
         
         """
-        if x < 0 or x > 15:
+        if x not in range(16):
             raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
-        if z < 0 or z > 15:
+        if z not in range(16):
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
 
         index = z * 16 + x
