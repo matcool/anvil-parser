@@ -50,9 +50,12 @@ def _states_from_section(section: nbt.TAG_Compound) -> list:
         # BlockStates is an array of 64 bit numbers
         # that holds the blocks index on the palette list
         if 'block_states' in section:
-            return section['block_states']['data'].value
+            states = section['block_states']['data']
         else:
-            return section['BlockStates'].value
+            states = section['BlockStates']
+
+        return [state if state >= 0 else states + 2 ** 64 
+            for state in states.value]
 
 
 def _section_height_range(version: Optional[int]) -> range:
@@ -284,8 +287,6 @@ class Chunk:
         # by adding 2^64
         # could also use ctypes.c_ulonglong(n).value but that'd require an extra import
         data = states[state]
-        if data < 0:
-            data += 2**64
 
         if stretches:
             # shift the number to the right to remove the left over bits
@@ -297,8 +298,6 @@ class Chunk:
         # if there aren't enough bits it means the rest are in the next number
         if stretches and 64 - ((bits * index) % 64) < bits:
             data = states[state + 1]
-            if data < 0:
-                data += 2**64
 
             # get how many bits are from a palette index of the next block
             leftover = (bits - ((state + 1) * 64 % bits)) % bits
@@ -407,7 +406,6 @@ class Chunk:
             state = index // (64 // bits)
 
         data = states[state]
-        if data < 0: data += 2**64
 
         bits_mask = 2**bits - 1
 
@@ -423,8 +421,6 @@ class Chunk:
             if data_len < bits:
                 state += 1
                 new_data = states[state]
-                if new_data < 0:
-                    new_data += 2**64
 
                 if stretches:
                     leftover = data_len
