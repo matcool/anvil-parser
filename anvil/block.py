@@ -79,9 +79,7 @@ class Block:
             Raw tag from a section's palette
         """
         name = tag['Name'].value
-        properties = tag.get('Properties')
-        if properties:
-            properties = dict(properties)
+        properties = dict(tag.get('Properties', dict()))
         return cls.from_name(name, properties=properties)
 
     @classmethod
@@ -103,6 +101,7 @@ class Block:
             raise KeyError(f'Block {key} not found')
         name, properties = LEGACY_ID_MAP[key]
         return cls('minecraft', name, properties=properties)
+
 
 class OldBlock:
     """
