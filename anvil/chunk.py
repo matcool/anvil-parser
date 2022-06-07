@@ -382,15 +382,26 @@ class Chunk:
                 index += 1
             return
 
-        if section is None or "BlockStates" not in section:
+        if (section is None 
+            or "BlockStates" not in section 
+            and 'block_states' not in section):
             air = Block.from_name("minecraft:air")
             for i in range(4096):
                 yield air
             return
 
-        states = section["BlockStates"].value
-        palette = section["Palette"]
+        if 'block_states' in section:
+            if 'data' in section['block_states']:
+                states = section['block_states']['data'].value
+            else:
+                air = Block.from_name("minecraft:air")
+                for i in range(4096):
+                    yield air
+                return 
+        else:
+            states = section['BlockStates'].value
 
+        palette = section['block_states']['palette']
         bits = max((len(palette) - 1).bit_length(), 4)
 
         stretches = self.version < _VERSION_20w17a
@@ -449,7 +460,16 @@ class Chunk:
         ------
         :class:`anvil.Block`
         """
-        for section in range(16):
+
+        if 'sections' in self.data:
+            sections = self.data["sections"]
+        else:
+            try:
+                sections = self.data["Sections"]
+            except KeyError:
+                raise StopIteration
+
+        for section in sections:
             for block in self.stream_blocks(section=section):
                 yield block
 
