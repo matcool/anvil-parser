@@ -4,6 +4,7 @@ from .biome import Biome
 from .empty_section import EmptySection
 from .errors import OutOfBoundsCoordinates, EmptySectionAlreadyExists
 from nbt import nbt
+from .legacy import LEGACY_BIOMES_ID_MAP
 
 class EmptyChunk:
     """
@@ -130,7 +131,11 @@ class EmptyChunk:
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
 
         index = z * 16 + x
-        self.biomes[index] = biome
+        for k, v in LEGACY_BIOMES_ID_MAP.items():
+            if v == biome.id:
+                self.biomes[index] = k
+                break
+        raise ValueError(f'Biome id "{biome.id}" not valid')
 
     def save(self) -> nbt.NBTFile:
         """
@@ -160,7 +165,7 @@ class EmptyChunk:
         ])
         sections = nbt.TAG_List(name='Sections', type=nbt.TAG_Compound)
         biomes = nbt.TAG_Int_Array(name='Biomes')
-        biomes.value = [biome.value for biome in self.biomes]
+        biomes.value = [biome for biome in self.biomes]
         for s in self.sections:
             if s:
                 p = s.palette()
