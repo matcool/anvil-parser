@@ -54,6 +54,10 @@ def _states_from_section(section: nbt.TAG_Compound) -> list:
         else:
             states = section['BlockStates']
 
+        # makes sure the number is unsigned
+        # by adding 2^64
+        # could also use ctypes.c_ulonglong(n).value but that'd require an extra import
+
         return [state if state >= 0 else states + 2 ** 64 
             for state in states.value]
 
@@ -179,18 +183,60 @@ class Chunk:
         if y // 16 not in section_range:
             raise OutOfBoundsCoordinates(f"Y ({y!r}) must be in range of "
                 f"{section_range.start * 16} to {section_range.stop * 16 - 1}")
+        
+        if 'Biomes' not in self.data:
+            # Each biome index refers to a 4x4x4 volumes here so we do integer division by 4
+            section = self.get_section(y // 16)
+            biomes = section['biomes']
+            biomes_palette = biomes['palette']
+            if 'data' in biomes:
+                biomes = biomes['data']
+            else:
+                # When there is only one biome in the section of the palette 'data'
+                # is not present
+                return Biome.from_name(biomes_palette[0].value)
 
-        biomes = self.data["Biomes"]
-        if self.version < _VERSION_19w36a:
-            # Each biome index refers to a column stored Z then X.
-            index = z * 16 + x
+
+            index = ((y % 16 // 4) * 4 * 4) + (z // 4) * 4 + (x // 4)
+            bits = (len(biomes_palette) - 1).bit_length()
+            state = index * bits // 64
+            data = biomes[state]
+
+            # shift the number to the right to remove the left over bits
+            # and shift so the i'th biome is the first one
+            shifted_data = data >> ((bits * index) % 64)
+
+            # if there aren't enough bits it means the rest are in the next number
+            if 64 - ((bits * index) % 64) < bits:
+                data = biomes[state + 1]
+
+                # get how many bits are from a palette index of the next biome
+                leftover = (bits - ((state + 1) * 64 % bits)) % bits
+
+                # Make sure to keep the length of the bits in the first state
+                # Example: bits is 5, and leftover is 3
+                # Next state                Current state (already shifted)
+                # 0b101010110101101010010   0b01
+                # will result in bin_append(0b010, 0b01, 2) = 0b01001
+                shifted_data = bin_append(
+                    data & 2**leftover - 1, shifted_data, bits - leftover
+                )
+
+            palette_id = shifted_data & 2**bits - 1
+            return Biome.from_name(biomes_palette[palette_id].value)
+
         else:
-            # https://minecraft.fandom.com/wiki/Java_Edition_19w36a
-            # Get index on the biome list with the order YZX
-            # Each biome index refers to a 4x4 volumes here so we do integer division by 4
-            index = (y // 4) * 4 * 4 + (z // 4) * 4 + (x // 4)
-        biome_id = biomes[index]
-        return Biome(biome_id)
+            biomes = self.data["Biomes"]
+            if self.version < _VERSION_19w36a:
+                # Each biome index refers to a column stored Z then X.
+                index = z * 16 + x
+            else:
+                # https://minecraft.fandom.com/wiki/Java_Edition_19w36a
+                # Get index on the biome list with the order YZX
+                # Each biome index refers to a 4x4 areas here so we do integer division by 4
+                index = (y // 4) * 4 * 4 + (z // 4) * 4 + (x // 4)
+            biome_id = biomes[index]
+            return Biome.from_numeric_id(biome_id)
 
     def get_block(
         self,
@@ -283,9 +329,6 @@ class Chunk:
         else:
             state = index // (64 // bits)
 
-        # makes sure the number is unsigned
-        # by adding 2^64
-        # could also use ctypes.c_ulonglong(n).value but that'd require an extra import
         data = states[state]
 
         if stretches:
