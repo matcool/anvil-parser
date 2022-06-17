@@ -6,6 +6,14 @@ from .errors import OutOfBoundsCoordinates, EmptySectionAlreadyExists
 from nbt import nbt
 from .legacy import LEGACY_BIOMES_ID_MAP
 
+
+def _get_legacy_biome_id(biome: Biome) -> int:
+    for k, v in LEGACY_BIOMES_ID_MAP.items():
+            if v == biome.id:
+                return k
+    raise ValueError(f'Biome id "{biome.id}" has no legacy equivalent')
+
+
 class EmptyChunk:
     """
     Used for making own chunks
@@ -26,7 +34,7 @@ class EmptyChunk:
         self.x = x
         self.z = z
         self.sections: List[EmptySection] = [None]*16
-        self.biomes: List[Biome] = [Biome(0)]*16*16
+        self.biomes: List[Biome] = [Biome('ocean')]*16*16
         self.version = 1976
 
     def add_section(self, section: EmptySection, replace: bool = True):
@@ -131,11 +139,7 @@ class EmptyChunk:
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
 
         index = z * 16 + x
-        for k, v in LEGACY_BIOMES_ID_MAP.items():
-            if v == biome.id:
-                self.biomes[index] = k
-                break
-        raise ValueError(f'Biome id "{biome.id}" not valid')
+        self.biomes[index] = biome
 
     def save(self) -> nbt.NBTFile:
         """
@@ -165,7 +169,8 @@ class EmptyChunk:
         ])
         sections = nbt.TAG_List(name='Sections', type=nbt.TAG_Compound)
         biomes = nbt.TAG_Int_Array(name='Biomes')
-        biomes.value = [biome for biome in self.biomes]
+
+        biomes.value = [_get_legacy_biome_id(biome) for biome in self.biomes]
         for s in self.sections:
             if s:
                 p = s.palette()
