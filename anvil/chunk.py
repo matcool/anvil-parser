@@ -5,9 +5,9 @@ from .block import Block, OldBlock
 from .region import Region
 from .errors import OutOfBoundsCoordinates, ChunkNotFound
 
-# This is the final version before the Minecraft overhaul that includes the 
-# 1.18 expansion of the world's vertical height from -64 to 319
-_VERSION_1_17_1 = 2730
+# This version removes the chunk's "Level" NBT tag and moves all contained tags to the top level
+# https://minecraft.fandom.com/wiki/Java_Edition_21w43a
+_VERSION_21w43a = 2844
 
 # This version removes block state value stretching from the storage
 # so a block value isn't in multiple elements of the array
@@ -99,7 +99,7 @@ class Chunk:
             # See https://minecraft.fandom.com/wiki/Data_version
             self.version = None
 
-        if self.version > _VERSION_1_17_1:
+        if self.version >= _VERSION_21w43a:
             self.data = nbt_data
             self.tile_entities = self.data["block_entities"]
         else:
