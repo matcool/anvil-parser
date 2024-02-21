@@ -21,6 +21,10 @@ _VERSION_19w36a = 2203
 # where blocks went from numeric ids to namespaced ids (namespace:block_id)
 _VERSION_17w47a = 1451
 
+# This represents Versions before 1.9 snapshot 15w32a, so world does not have a Data Version.
+# https://minecraft.fandom.com/wiki/Data_version
+_VERSION_PRE_15w32a = 100
+
 
 def bin_append(a, b, length=None):
     """
@@ -97,7 +101,7 @@ class Chunk:
         except KeyError:
             # Version is pre-1.9 snapshot 15w32a, so world does not have a Data Version.
             # See https://minecraft.fandom.com/wiki/Data_version
-            self.version = None
+            self.version = _VERSION_PRE_15w32a
 
         if self.version >= _VERSION_21w43a:
             self.data = nbt_data
