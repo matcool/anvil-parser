@@ -6,7 +6,7 @@ from .region import Region
 from .errors import OutOfBoundsCoordinates, ChunkNotFound
 
 # This version removes the chunk's "Level" NBT tag and moves all contained tags to the top level
-# https://minecraft.fandom.com/wiki/Java_Edition_21w43a
+# https://minecraft.wiki/w/Java_Edition_21w43a
 _VERSION_21w43a = 2844
 
 # This version removes block state value stretching from the storage
@@ -14,10 +14,10 @@ _VERSION_21w43a = 2844
 _VERSION_20w17a = 2529
 
 # This version changes how biomes are stored to allow for biomes at different heights
-# https://minecraft.fandom.com/wiki/Java_Edition_19w36a
+# https://minecraft.wiki/w/Java_Edition_19w36a
 _VERSION_19w36a = 2203
 
-# This is the version where "The Flattening" (https://minecraft.gamepedia.com/Java_Edition_1.13/Flattening) happened
+# This is the version where "The Flattening" (https://minecraft.wiki/w/Java_Edition_1.13/Flattening) happened
 # where blocks went from numeric ids to namespaced ids (namespace:block_id)
 _VERSION_17w47a = 1451
 
@@ -96,7 +96,7 @@ class Chunk:
             self.version = nbt_data["DataVersion"].value
         except KeyError:
             # Version is pre-1.9 snapshot 15w32a, so world does not have a Data Version.
-            # See https://minecraft.fandom.com/wiki/Data_version
+            # See https://minecraft.wiki/w/Data_version
             self.version = None
 
         if self.version >= _VERSION_21w43a:
@@ -282,7 +282,7 @@ class Chunk:
             y %= 16
 
         if self.version is None or self.version < _VERSION_17w47a:
-            # Explained in depth here https://minecraft.gamepedia.com/index.php?title=Chunk_format&oldid=1153403#Block_format
+            # Explained in depth here https://minecraft.wiki/w/index.php?title=Chunk_format&oldid=1153403#Block_format
 
             if section is None or "Blocks" not in section:
                 if force_new:

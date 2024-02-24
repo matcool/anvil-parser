@@ -94,8 +94,8 @@ class Block:
         data
             Numeric data, used to represent variants of the block
         """
-        # See https://minecraft.gamepedia.com/Java_Edition_data_value/Pre-flattening
-        # and https://minecraft.gamepedia.com/Java_Edition_data_value for current values
+        # See https://minecraft.wiki/w/Java_Edition_data_value/Pre-flattening
+        # and https://minecraft.wiki/w/Java_Edition_data_value for current values
         key = f'{block_id}:{data}'
         if key not in LEGACY_ID_MAP:
             raise KeyError(f'Block {key} not found')
