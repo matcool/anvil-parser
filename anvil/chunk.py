@@ -22,7 +22,7 @@ _VERSION_19w36a = 2203
 _VERSION_17w47a = 1451
 
 # This represents Versions before 1.9 snapshot 15w32a, so world does not have a Data Version.
-# https://minecraft.fandom.com/wiki/Data_version
+# https://minecraft.wiki/w/Data_version
 _VERSION_PRE_15w32a = 100
 
 
@@ -235,7 +235,7 @@ class Chunk:
                 # Each biome index refers to a column stored Z then X.
                 index = z * 16 + x
             else:
-                # https://minecraft.fandom.com/wiki/Java_Edition_19w36a
+                # https://minecraft.wiki/w/Java_Edition_19w36a
                 # Get index on the biome list with the order YZX
                 # Each biome index refers to a 4x4 areas here so we do integer division by 4
                 index = (y // 4) * 4 * 4 + (z // 4) * 4 + (x // 4)
