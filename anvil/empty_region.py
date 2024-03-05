@@ -5,6 +5,7 @@ from .empty_section import EmptySection
 from .block import Block
 from .biome import Biome
 from .errors import OutOfBoundsCoordinates
+from .versions import VERSION_21w43a
 from io import BytesIO
 from nbt import nbt
 import zlib
@@ -289,7 +290,12 @@ class EmptyRegion:
             if isinstance(chunk, Chunk):
                 nbt_data = nbt.NBTFile()
                 nbt_data.tags.append(nbt.TAG_Int(name='DataVersion', value=chunk.version))
-                nbt_data.tags.append(chunk.data)
+
+                if chunk.version >= VERSION_21w43a:
+                    for tag in chunk.data.tags:
+                        nbt_data.tags.append(tag)
+                else:
+                    nbt_data.tags.append(chunk.data)
             else:
                 nbt_data = chunk.save()
             nbt_data.write_file(buffer=chunk_data)
