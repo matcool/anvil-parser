@@ -1,8 +1,18 @@
 from typing import List
 from .block import Block
+from .biome import Biome
 from .empty_section import EmptySection
 from .errors import OutOfBoundsCoordinates, EmptySectionAlreadyExists
 from nbt import nbt
+from .legacy import LEGACY_BIOMES_ID_MAP
+
+
+def _get_legacy_biome_id(biome: Biome) -> int:
+    for k, v in LEGACY_BIOMES_ID_MAP.items():
+            if v == biome.id:
+                return k
+    raise ValueError(f'Biome id "{biome.id}" has no legacy equivalent')
+
 
 class EmptyChunk:
     """
@@ -19,11 +29,12 @@ class EmptyChunk:
     version: :class:`int`
         Chunk's DataVersion
     """
-    __slots__ = ('x', 'z', 'sections', 'version')
+    __slots__ = ('x', 'z', 'sections', 'biomes', 'version')
     def __init__(self, x: int, z: int):
         self.x = x
         self.z = z
         self.sections: List[EmptySection] = [None]*16
+        self.biomes: List[Biome] = [Biome('ocean')]*16*16
         self.version = 1976
 
     def add_section(self, section: EmptySection, replace: bool = True):
@@ -68,11 +79,11 @@ class EmptyChunk:
             Returns ``None`` if the section is empty, meaning the block
             is most likely an air block.
         """
-        if x < 0 or x > 15:
+        if x not in range(16):
             raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
-        if z < 0 or z > 15:
+        if z not in range(16):
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
-        if y < 0 or y > 255:
+        if y not in range(256):
             raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
         section = self.sections[y // 16]
         if section is None:
@@ -94,19 +105,41 @@ class EmptyChunk:
         ------
         anvil.OutOfBoundCoordidnates
             If X, Y or Z are not in the proper range
-        
         """
-        if x < 0 or x > 15:
+        if x not in range(16):
             raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
-        if z < 0 or z > 15:
+        if z not in range(16):
             raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
-        if y < 0 or y > 255:
+        if y not in range(256):
             raise OutOfBoundsCoordinates(f'Y ({y!r}) must be in range of 0 to 255')
         section = self.sections[y // 16]
         if section is None:
             section = EmptySection(y // 16)
             self.add_section(section)
         section.set_block(block, x, y % 16, z)
+
+    def set_biome(self, biome: Biome, x: int, z: int):
+        """
+        Sets biome at given coordinates
+        
+        Parameters
+        ----------
+        int x, z
+            In range of 0 to 15
+
+        Raises
+        ------
+        anvil.OutOfBoundCoordidnates
+            If X or Z are not in the proper range
+        
+        """
+        if x not in range(16):
+            raise OutOfBoundsCoordinates(f'X ({x!r}) must be in range of 0 to 15')
+        if z not in range(16):
+            raise OutOfBoundsCoordinates(f'Z ({z!r}) must be in range of 0 to 15')
+
+        index = z * 16 + x
+        self.biomes[index] = biome
 
     def save(self) -> nbt.NBTFile:
         """
@@ -135,6 +168,9 @@ class EmptyChunk:
             nbt.TAG_String(name='Status', value='full')
         ])
         sections = nbt.TAG_List(name='Sections', type=nbt.TAG_Compound)
+        biomes = nbt.TAG_Int_Array(name='Biomes')
+
+        biomes.value = [_get_legacy_biome_id(biome) for biome in self.biomes]
         for s in self.sections:
             if s:
                 p = s.palette()
@@ -144,5 +180,6 @@ class EmptyChunk:
                     continue
                 sections.tags.append(s.save())
         level.tags.append(sections)
+        level.tags.append(biomes)
         root.tags.append(level)
         return root

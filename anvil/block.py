@@ -79,9 +79,7 @@ class Block:
             Raw tag from a section's palette
         """
         name = tag['Name'].value
-        properties = tag.get('Properties')
-        if properties:
-            properties = dict(properties)
+        properties = dict(tag.get('Properties', dict()))
         return cls.from_name(name, properties=properties)
 
     @classmethod
@@ -96,13 +94,14 @@ class Block:
         data
             Numeric data, used to represent variants of the block
         """
-        # See https://minecraft.gamepedia.com/Java_Edition_data_value/Pre-flattening
-        # and https://minecraft.gamepedia.com/Java_Edition_data_value for current values
+        # See https://minecraft.wiki/w/Java_Edition_data_value/Pre-flattening
+        # and https://minecraft.wiki/w/Java_Edition_data_value for current values
         key = f'{block_id}:{data}'
         if key not in LEGACY_ID_MAP:
             raise KeyError(f'Block {key} not found')
         name, properties = LEGACY_ID_MAP[key]
         return cls('minecraft', name, properties=properties)
+
 
 class OldBlock:
     """

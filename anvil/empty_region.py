@@ -3,7 +3,9 @@ from .empty_chunk import EmptyChunk
 from .chunk import Chunk
 from .empty_section import EmptySection
 from .block import Block
+from .biome import Biome
 from .errors import OutOfBoundsCoordinates
+from .versions import VERSION_21w43a
 from io import BytesIO
 from nbt import nbt
 import zlib
@@ -46,7 +48,7 @@ class EmptyRegion:
         factor = 32 if chunk else 512
         rx = x // factor
         rz = z // factor
-        return not (rx != self.x or rz != self.z or y < 0 or y > 255)
+        return not (rx != self.x or rz != self.z or y not in range(256))
 
     def get_chunk(self, x: int, z: int) -> EmptyChunk:
         """
@@ -140,6 +142,33 @@ class EmptyRegion:
             self.add_chunk(chunk)
         chunk.set_block(block, x % 16, y, z % 16)
 
+    def set_biome(self, biome: Biome, x: int, z: int):
+        """
+        Sets biome at given coordinates.
+        New chunk is made if it doesn't exist.
+
+        Parameters
+        ----------
+        biome: :class:`Biome`
+            Biome to place
+        int x, z
+            Coordinates
+
+        Raises
+        ------
+        anvil.OutOfBoundsCoordinates
+            If the biome (x, z) is not inside this region
+        """
+        if not self.inside(x, 0, z):
+            raise OutOfBoundsCoordinates(f'Biome ({x}, {z}) is not inside this region')
+        cx = x // 16
+        cz = z // 16
+        chunk = self.get_chunk(cx, cz)
+        if chunk is None:
+            chunk = EmptyChunk(cx, cz)
+            self.add_chunk(chunk)
+        chunk.set_biome(biome, x % 16, z % 16)
+
     def set_if_inside(self, block: Block, x: int, y: int, z: int):
         """
         Helper function that only sets
@@ -154,6 +183,21 @@ class EmptyRegion:
         """
         if self.inside(x, y, z):
             self.set_block(block, x, y, z)
+
+    def set_biome_if_inside(self, biome: Biome, x: int, z: int):
+        """
+        Helper function that only sets
+        the biome if ``self.inside(x, 0, z)`` is true
+        
+        Parameters
+        ----------
+        biome: :class:`Biome`
+            Biome to place
+        int x, z
+            Coordinates
+        """
+        if self.inside(x, 0, z):
+            self.set_biome(biome, x, z)
 
     def fill(self, block: Block, x1: int, y1: int, z1: int, x2: int, y2: int, z2: int, ignore_outside: bool=False):
         """
@@ -189,6 +233,40 @@ class EmptyRegion:
                         self.set_if_inside(block, x, y, z)
                     else:
                         self.set_block(block, x, y, z)
+                        
+    def fill_biome(self, biome: Biome, x1: int, z1: int, x2: int, z2: int, ignore_outside: bool=False):
+        """
+        Fills in biomes from
+        ``(x1, z1)`` to ``(x2, z2)``
+        in a rectangle.
+
+        Parameters
+        ----------
+        biome: :class:`Biome`
+        int x1, z1
+            Coordinates
+        int x2, z2
+            Coordinates
+        ignore_outside
+            Whether to ignore if coordinates are outside the region
+
+        Raises
+        ------
+        anvil.OutOfBoundsCoordinates
+            If any of the coordinates are outside the region
+        """
+        if not ignore_outside:
+            if not self.inside(x1, 0, z1):
+                raise OutOfBoundsCoordinates(f'First coords ({x1}, {z1}) is not inside this region')
+            if not self.inside(x2, 0, z2):
+                raise OutOfBoundsCoordinates(f'Second coords ({x2}, {z2}) is not inside this region')
+
+        for z in from_inclusive(z1, z2):
+            for x in from_inclusive(x1, x2):
+                if ignore_outside:
+                    self.set_biome_if_inside(biome, x, z)
+                else:
+                    self.set_biome(biome, x, z)
 
     def save(self, file: Union[str, BinaryIO]=None) -> bytes:
         """
@@ -212,7 +290,12 @@ class EmptyRegion:
             if isinstance(chunk, Chunk):
                 nbt_data = nbt.NBTFile()
                 nbt_data.tags.append(nbt.TAG_Int(name='DataVersion', value=chunk.version))
-                nbt_data.tags.append(chunk.data)
+
+                if chunk.version >= VERSION_21w43a:
+                    for tag in chunk.data.tags:
+                        nbt_data.tags.append(tag)
+                else:
+                    nbt_data.tags.append(chunk.data)
             else:
                 nbt_data = chunk.save()
             nbt_data.write_file(buffer=chunk_data)
