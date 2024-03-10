@@ -21,9 +21,10 @@ _VERSION_19w36a = 2203
 # where blocks went from numeric ids to namespaced ids (namespace:block_id)
 _VERSION_17w47a = 1451
 
-# This represents Versions before 1.9 snapshot 15w32a, so world does not have a Data Version.
+# This represents Versions before 1.9 snapshot 15w32a, 
+# these snapshots do not have a Data Version so we use -1 since -1 is less than any valid data version.
 # https://minecraft.wiki/w/Data_version
-_VERSION_PRE_15w32a = 100
+_VERSION_PRE_15w32a = -1
 
 
 def bin_append(a, b, length=None):
@@ -67,7 +68,7 @@ def _states_from_section(section: nbt.TAG_Compound) -> list:
 
 
 def _section_height_range(version: Optional[int]) -> range:
-    if version is not None and version > _VERSION_17w47a:
+    if version > _VERSION_17w47a:
         return range(-4, 20)
     else:
         return range(16)
@@ -285,7 +286,7 @@ class Chunk:
             # global Y to section Y
             y %= 16
 
-        if self.version is None or self.version < _VERSION_17w47a:
+        if self.version < _VERSION_17w47a:
             # Explained in depth here https://minecraft.wiki/w/index.php?title=Chunk_format&oldid=1153403#Block_format
 
             if section is None or "Blocks" not in section:
@@ -325,7 +326,7 @@ class Chunk:
         # Get index on the block list with the order YZX
         index = y * 16 * 16 + z * 16 + x
         # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
-        stretches = self.version is None or self.version < _VERSION_20w17a
+        stretches = self.version < _VERSION_20w17a
 
         # get location in the BlockStates array via the index
         if stretches:
