@@ -13,3 +13,8 @@ VERSION_19w36a = 2203
 # This is the version where "The Flattening" (https://minecraft.wiki/w/Java_Edition_1.13/Flattening) happened
 # where blocks went from numeric ids to namespaced ids (namespace:block_id)
 VERSION_17w47a = 1451
+
+# This represents Versions before 1.9 snapshot 15w32a, 
+# these snapshots do not have a Data Version so we use -1 since -1 is less than any valid data version.
+# https://minecraft.wiki/w/Data_version
+VERSION_PRE_15w32a = -1

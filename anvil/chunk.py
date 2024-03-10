@@ -4,7 +4,7 @@ from .biome import Biome
 from .block import Block, OldBlock
 from .region import Region
 from .errors import OutOfBoundsCoordinates, ChunkNotFound
-from .versions import VERSION_21w43a, VERSION_20w17a, VERSION_19w36a, VERSION_17w47a
+from .versions import VERSION_21w43a, VERSION_20w17a, VERSION_19w36a, VERSION_17w47a, VERSION_PRE_15w32a
 
 
 def bin_append(a, b, length=None):
@@ -48,7 +48,7 @@ def _states_from_section(section: nbt.TAG_Compound) -> list:
 
 
 def _section_height_range(version: Optional[int]) -> range:
-    if version is not None and version > VERSION_17w47a:
+    if version > VERSION_17w47a:
         return range(-4, 20)
     else:
         return range(16)
@@ -82,7 +82,7 @@ class Chunk:
         except KeyError:
             # Version is pre-1.9 snapshot 15w32a, so world does not have a Data Version.
             # See https://minecraft.wiki/w/Data_version
-            self.version = None
+            self.version = VERSION_PRE_15w32a
 
         if self.version >= VERSION_21w43a:
             self.data = nbt_data
@@ -216,7 +216,7 @@ class Chunk:
                 # Each biome index refers to a column stored Z then X.
                 index = z * 16 + x
             else:
-                # https://minecraft.fandom.com/wiki/Java_Edition_19w36a
+                # https://minecraft.wiki/w/Java_Edition_19w36a
                 # Get index on the biome list with the order YZX
                 # Each biome index refers to a 4x4 areas here so we do integer division by 4
                 index = (y // 4) * 4 * 4 + (z // 4) * 4 + (x // 4)
@@ -266,7 +266,7 @@ class Chunk:
             # global Y to section Y
             y %= 16
 
-        if self.version is None or self.version < VERSION_17w47a:
+        if self.version < VERSION_17w47a:
             # Explained in depth here https://minecraft.wiki/w/index.php?title=Chunk_format&oldid=1153403#Block_format
 
             if section is None or "Blocks" not in section:
@@ -306,7 +306,7 @@ class Chunk:
         # Get index on the block list with the order YZX
         index = y * 16 * 16 + z * 16 + x
         # in 20w17a and newer blocks cannot occupy more than one element on the BlockStates array
-        stretches = self.version is None or self.version < VERSION_20w17a
+        stretches = self.version < VERSION_20w17a
 
         # get location in the BlockStates array via the index
         if stretches:
