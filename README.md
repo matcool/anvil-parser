@@ -1,20 +1,14 @@
-# anvil-parser
-
-[![CodeFactor](https://www.codefactor.io/repository/github/matcool/anvil-parser/badge/master)](https://www.codefactor.io/repository/github/matcool/anvil-parser/overview/master)
+# anvil-parser2
 [![Documentation Status](https://readthedocs.org/projects/anvil-parser/badge/?version=latest)](https://anvil-parser.readthedocs.io/en/latest/?badge=latest)
-[![Tests](https://github.com/matcool/anvil-parser/actions/workflows/run-pytest.yml/badge.svg)](https://github.com/matcool/anvil-parser/actions/workflows/run-pytest.yml)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/anvil-parser)](https://pypi.org/project/anvil-parser/)
+[![Tests](https://github.com/0xTiger/anvil-parser/actions/workflows/run-pytest.yml/badge.svg)](https://github.com/0xTiger/anvil-parser/actions/workflows/run-pytest.yml)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/anvil-parser)](https://pypi.org/project/anvil-parser2/)
 
-Simple parser for the [Minecraft anvil file format](https://minecraft.gamepedia.com/Anvil_file_format)
+A parser for the [Minecraft anvil file format](https://minecraft.wiki/w/Anvil_file_format). This package was forked from [matcool's anvil-parser](https://github.com/matcool/anvil-parser) in order to additionally support minecraft versions 1.18 and above.
 # Installation
-This project is available on [PyPI](https://pypi.org/project/anvil-parser/) and can be installed with pip
 ```
-pip install anvil-parser
+pip install anvil-parser2
 ```
-or directly from github
-```
-pip install git+https://github.com/matcool/anvil-parser.git
-```
+
 # Usage
 ## Reading
 ```python
@@ -57,9 +51,9 @@ region.save('r.0.0.mca')
 # Todo
 *things to do before 1.0.0*
 - [x] Proper documentation
-- [ ] Biomes
+- [x] Biomes
 - [x] CI
 - [ ] More tests
   - [ ] Tests for 20w17a+ BlockStates format
 # Note
-Testing done in 1.14.4 and 1.15.2, should work fine for other versions.
+Testing done in 1.14.4 - 1.21, should work fine for other versions.
